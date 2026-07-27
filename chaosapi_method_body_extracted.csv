@@ -1,0 +1,1981 @@
+project_url,sha_detected,node_id,project_name,java_class,test_method,module,source_file,test_method_code,extraction_status,extraction_error
+https://github.com/apache/commons-exec,ea4d1d423b5a2c6ce6b61dd4f1618ad1e78ef3ee,org.apache.commons.exec.DefaultExecutorTest#testExecuteAsyncWithProcessDestroyer,apache-commons-exec,org.apache.commons.exec.DefaultExecutorTest,testExecuteAsyncWithProcessDestroyer,.,src/test/java/org/apache/commons/exec/DefaultExecutorTest.java,"public void testExecuteAsyncWithProcessDestroyer() throws Exception {
+
+      CommandLine cl = new CommandLine(foreverTestScript);
+      MockExecuteResultHandler handler = new MockExecuteResultHandler();
+      ShutdownHookProcessDestroyer processDestroyer = new ShutdownHookProcessDestroyer();
+      ExecuteWatchdog watchdog = new ExecuteWatchdog(Integer.MAX_VALUE);
+
+      assertTrue(exec.getProcessDestroyer() == null);
+      assertTrue(processDestroyer.size() == 0);
+      assertTrue(processDestroyer.isAddedAsShutdownHook() == false);
+
+      exec.setWatchdog(watchdog);
+      exec.setProcessDestroyer(processDestroyer);
+      exec.execute(cl, handler);
+
+      // wait for script to run
+      Thread.sleep(2000);
+      assertNotNull(exec.getProcessDestroyer());      
+      assertTrue(processDestroyer.size() == 1);
+      assertTrue(processDestroyer.isAddedAsShutdownHook() == true);
+
+      // teminate it and the process destroyer is detached
+      watchdog.destroyProcess();
+      assertTrue(watchdog.killedProcess());
+      Thread.sleep(100);
+      assertTrue(processDestroyer.size() == 0);
+      assertTrue(processDestroyer.isAddedAsShutdownHook() == false);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.impl.nio.reactor.TestDefaultIOReactors#testGracefulShutdown,apache-httpcore,org.apache.http.impl.nio.reactor.TestDefaultIOReactors,testGracefulShutdown,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/impl/nio/reactor/TestDefaultIOReactors.java,"@Test
+    public void testGracefulShutdown() throws Exception {
+
+        // Open some connection and make sure
+        // they get cleanly closed upon shutdown
+
+        final int connNo = 10;
+        final CountDownLatch requestConns = new CountDownLatch(connNo);
+        final AtomicInteger closedServerConns = new AtomicInteger(0);
+        final AtomicInteger openServerConns = new AtomicInteger(0);
+        final AtomicInteger closedClientConns = new AtomicInteger(0);
+        final AtomicInteger openClientConns = new AtomicInteger(0);
+
+        HttpRequestHandler requestHandler = new HttpRequestHandler() {
+
+            public void handle(
+                    final HttpRequest request,
+                    final HttpResponse response,
+                    final HttpContext context) throws HttpException, IOException {
+            }
+
+        };
+
+        HttpRequestExecutionHandler requestExecutionHandler = new HttpRequestExecutionHandler() {
+
+            public void initalizeContext(final HttpContext context, final Object attachment) {
+            }
+
+            public void finalizeContext(final HttpContext context) {
+                while (requestConns.getCount() > 0) {
+                    requestConns.countDown();
+                }
+            }
+
+            public HttpRequest submitRequest(final HttpContext context) {
+                Boolean b = ((Boolean) context.getAttribute(""done""));
+                if (b == null) {
+                    BasicHttpRequest get = new BasicHttpRequest(""GET"", ""/"");
+                    context.setAttribute(""done"", Boolean.TRUE);
+                    return get;
+                } else {
+                    return null;
+                }
+            }
+
+            public void handleResponse(final HttpResponse response, final HttpContext context) {
+                requestConns.countDown();
+            }
+
+        };
+
+        EventListener serverEventListener = new SimpleEventListener() {
+
+            @Override
+            public void connectionOpen(NHttpConnection conn) {
+                openServerConns.incrementAndGet();
+                super.connectionOpen(conn);
+            }
+
+            @Override
+            public void connectionClosed(NHttpConnection conn) {
+                closedServerConns.incrementAndGet();
+                super.connectionClosed(conn);
+            }
+
+        };
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        BufferingHttpServiceHandler serviceHandler = new BufferingHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleHttpRequestHandlerResolver(requestHandler));
+        serviceHandler.setEventListener(
+                serverEventListener);
+
+        EventListener clientEventListener = new SimpleEventListener() {
+
+            @Override
+            public void connectionOpen(NHttpConnection conn) {
+                openClientConns.incrementAndGet();
+                super.connectionOpen(conn);
+            }
+
+            @Override
+            public void connectionClosed(NHttpConnection conn) {
+                closedClientConns.incrementAndGet();
+                super.connectionClosed(conn);
+            }
+
+        };
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        BufferingHttpClientHandler clientHandler = new BufferingHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(
+                clientEventListener);
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    null);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        requestConns.await();
+        Assert.assertEquals(0, requestConns.getCount());
+
+        this.client.shutdown();
+        this.server.shutdown();
+
+        Assert.assertEquals(openClientConns.get(), closedClientConns.get());
+        Assert.assertEquals(openServerConns.get(), closedServerConns.get());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.impl.pool.TestBasicConnPool#testHttpCreateConnection,apache-httpcore,org.apache.http.impl.pool.TestBasicConnPool,testHttpCreateConnection,httpcore,httpcore/src/test/java/org/apache/http/impl/pool/TestBasicConnPool.java,"@Test
+    public void testHttpCreateConnection() throws Exception {
+        host = new HttpHost(""localhost"", serverPort, ""http"");
+        conn = pool.createConnection(host);
+
+        assertEquals(true, conn.isOpen());
+        assertEquals(100, conn.getSocketTimeout());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testDelayedHttpException,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testDelayedHttpException,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testDelayedHttpException() throws Exception {
+
+        NHttpRequestHandler requestHandler = new NHttpRequestHandler() {
+
+            public ConsumingNHttpEntity entityRequest(
+                    final HttpEntityEnclosingRequest request,
+                    final HttpContext context) {
+                return null;
+            }
+            public void handle(final HttpRequest request, HttpResponse response,
+                    final NHttpResponseTrigger trigger, HttpContext context)
+                    throws HttpException, IOException {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try { Thread.sleep(10); } catch(InterruptedException ie) {}
+                        trigger.handleException(
+                                new HttpException(request.getRequestLine().getUri()));
+                    }
+                }.start();
+            }
+
+        };
+
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                return new BasicHttpRequest(""GET"", s);
+            }
+
+        };
+
+        int connNo = 3;
+        int reqNo = 20;
+        Job[] jobs = new Job[connNo * reqNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job();
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        AsyncNHttpServiceHandler serviceHandler = new AsyncNHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleNHttpRequestHandlerResolver(requestHandler));
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        AsyncNHttpClientHandler clientHandler = new AsyncNHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, testjob.getStatusCode());
+                Assert.assertEquals(testjob.getPattern() + ""x"" + testjob.getCount(), testjob.getResult());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testDelayedHttpGets,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testDelayedHttpGets,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testDelayedHttpGets() throws Exception {
+
+        NHttpRequestHandler requestHandler = new NHttpRequestHandler() {
+
+            public ConsumingNHttpEntity entityRequest(
+                    final HttpEntityEnclosingRequest request,
+                    final HttpContext context) {
+                return null;
+            }
+
+            public void handle(
+                    final HttpRequest request,
+                    final HttpResponse response,
+                    final NHttpResponseTrigger trigger,
+                    final HttpContext context) throws HttpException, IOException {
+                String s = request.getRequestLine().getUri();
+                int idx = s.indexOf('x');
+                if (idx == -1) {
+                    throw new HttpException(""Unexpected request-URI format"");
+                }
+                String pattern = s.substring(0, idx);
+                int count = Integer.parseInt(s.substring(idx + 1, s.length()));
+
+                StringBuilder buffer = new StringBuilder();
+                for (int i = 0; i < count; i++) {
+                    buffer.append(pattern);
+                }
+                final String content = buffer.toString();
+
+                new Thread() {
+                    @Override
+                    public void run() {
+                        // Wait a bit, to make sure this is delayed.
+                        try { Thread.sleep(10); } catch(InterruptedException ie) {}
+                        // Set the entity after delaying...
+                        try {
+                            NStringEntity entity = new NStringEntity(content, ""US-ASCII"");
+                            response.setEntity(entity);
+                        }  catch (UnsupportedEncodingException ex) {
+                        }
+                        trigger.submitResponse(response);
+                    }
+                }.start();
+            }
+
+        };
+
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                return new BasicHttpRequest(""GET"", s);
+            }
+
+        };
+        executeStandardTest(requestHandler, requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testHttpException,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testHttpException,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testHttpException() throws Exception {
+
+        NHttpRequestHandler requestHandler = new SimpleNHttpRequestHandler() {
+
+            public ConsumingNHttpEntity entityRequest(
+                    final HttpEntityEnclosingRequest request,
+                    final HttpContext context) {
+                return null;
+            }
+
+            @Override
+            public void handle(
+                    final HttpRequest request,
+                    final HttpResponse response,
+                    final HttpContext context) throws HttpException, IOException {
+                throw new HttpException(request.getRequestLine().getUri());
+            }
+
+        };
+
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                return new BasicHttpRequest(""GET"", s);
+            }
+
+        };
+
+        int connNo = 3;
+        int reqNo = 20;
+        Job[] jobs = new Job[connNo * reqNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job();
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        AsyncNHttpServiceHandler serviceHandler = new AsyncNHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleNHttpRequestHandlerResolver(requestHandler));
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        AsyncNHttpClientHandler clientHandler = new AsyncNHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, testjob.getStatusCode());
+                Assert.assertEquals(testjob.getPattern() + ""x"" + testjob.getCount(), testjob.getResult());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testHttpPostWithNoEntities,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testHttpPostWithNoEntities,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testHttpPostWithNoEntities() throws Exception {
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                r.setEntity(null);
+                return r;
+            }
+
+        };
+
+        int connNo = 3;
+        int reqNo = 20;
+        Job[] jobs = new Job[connNo * reqNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job();
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        AsyncNHttpServiceHandler serviceHandler = new AsyncNHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleNHttpRequestHandlerResolver(new RequestHandler()));
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        AsyncNHttpClientHandler clientHandler = new AsyncNHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_OK, testjob.getStatusCode());
+                Assert.assertEquals("""", testjob.getResult());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testHttpPostsChunked,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testHttpPostsChunked,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testHttpPostsChunked() throws Exception {
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                    entity.setChunked(true);
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testNoRequestHandler,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testNoRequestHandler,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testNoRequestHandler() throws Exception {
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                NByteArrayEntity entity = new NByteArrayEntity(new byte[] {1,2,3,4,5} );
+                entity.setChunked(false);
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+
+        int connNo = 3;
+        Job[] jobs = new Job[connNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job();
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        AsyncNHttpServiceHandler serviceHandler = new AsyncNHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleNHttpRequestHandlerResolver(null));
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        AsyncNHttpClientHandler clientHandler = new AsyncNHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, testjob.getStatusCode());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestAsyncNHttpHandlers#testNoServiceHandler,apache-httpcore,org.apache.http.nio.protocol.TestAsyncNHttpHandlers,testNoServiceHandler,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestAsyncNHttpHandlers.java,"@Test
+    public void testNoServiceHandler() throws Exception {
+        NHttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                return new BasicHttpRequest(""GET"", s);
+            }
+
+        };
+
+        int connNo = 5;
+        Job[] jobs = new Job[connNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job();
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        AsyncNHttpServiceHandler serviceHandler = new AsyncNHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.server.getParams());
+
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        AsyncNHttpClientHandler clientHandler = new AsyncNHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.client.getParams());
+
+        clientHandler.setEventListener(new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, testjob.getStatusCode());
+                Assert.assertEquals("""", testjob.getResult());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestBufferingNHttpHandlers#testHttpPostsChunked,apache-httpcore,org.apache.http.nio.protocol.TestBufferingNHttpHandlers,testHttpPostsChunked,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestBufferingNHttpHandlers.java,"@Test
+    public void testHttpPostsChunked() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                    entity.setChunked(true);
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestBufferingNHttpHandlers#testHttpPostsHTTP10,apache-httpcore,org.apache.http.nio.protocol.TestBufferingNHttpHandlers,testHttpPostsHTTP10,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestBufferingNHttpHandlers.java,"@Test
+    public void testHttpPostsHTTP10() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s,
+                        HttpVersion.HTTP_1_0);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestBufferingNHttpHandlers#testHttpPostsWithExpectContinue,apache-httpcore,org.apache.http.nio.protocol.TestBufferingNHttpHandlers,testHttpPostsWithExpectContinue,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestBufferingNHttpHandlers.java,"@Test
+    public void testHttpPostsWithExpectContinue() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                r.getParams().setBooleanParameter(CoreProtocolPNames.USE_EXPECT_CONTINUE, true);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers#testInputThrottling,apache-httpcore,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers,testInputThrottling,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestThrottlingNHttpHandlers.java,"@Test
+    public void testInputThrottling() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new HttpRequestExecutionHandler() {
+
+            public void initalizeContext(final HttpContext context, final Object attachment) {
+                context.setAttribute(""queue"", attachment);
+            }
+
+            public HttpRequest submitRequest(final HttpContext context) {
+
+                @SuppressWarnings(""unchecked"")
+                Queue<Job> queue = (Queue<Job>) context.getAttribute(""queue"");
+                if (queue == null) {
+                    throw new IllegalStateException(""Queue is null"");
+                }
+
+                Job testjob = queue.poll();
+                context.setAttribute(""job"", testjob);
+
+                if (testjob != null) {
+                    String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                    HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                    StringEntity entity = null;
+                    try {
+                        entity = new StringEntity(testjob.getExpected(), ""US-ASCII"");
+                        entity.setChunked(testjob.getCount() % 2 == 0);
+                    } catch (UnsupportedEncodingException ignore) {
+                    }
+                    r.setEntity(entity);
+                    return r;
+                } else {
+                    return null;
+                }
+            }
+
+            public void handleResponse(final HttpResponse response, final HttpContext context) {
+                Job testjob = (Job) context.removeAttribute(""job"");
+                if (testjob == null) {
+                    throw new IllegalStateException(""TestJob is null"");
+                }
+
+                int statusCode = response.getStatusLine().getStatusCode();
+                String content = null;
+
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    try {
+                        // Simulate slow response handling in order to cause the
+                        // internal content buffer to fill up, forcing the
+                        // protocol handler to throttle input rate
+                        ByteArrayOutputStream outstream = new ByteArrayOutputStream();
+                        InputStream instream = entity.getContent();
+                        byte[] tmp = new byte[2048];
+                        int l;
+                        while((l = instream.read(tmp)) != -1) {
+                            Thread.sleep(1);
+                            outstream.write(tmp, 0, l);
+                        }
+                        ContentType contentType = ContentType.getOrDefault(entity);
+                        String charset = contentType.getCharset();
+                        if (charset == null) {
+                            charset = HTTP.DEFAULT_CONTENT_CHARSET;
+                        }
+                        content = new String(outstream.toByteArray(), charset);
+                    } catch (InterruptedException ex) {
+                        content = ""Interrupted: "" + ex.getMessage();
+                    } catch (IOException ex) {
+                        content = ""I/O exception: "" + ex.getMessage();
+                    }
+                }
+                testjob.setResult(statusCode, content);
+            }
+
+            public void finalizeContext(final HttpContext context) {
+                Job testjob = (Job) context.removeAttribute(""job"");
+                if (testjob != null) {
+                    testjob.fail(""Request failed"");
+                }
+            }
+
+        };
+        int connNo = 3;
+        int reqNo = 20;
+        Job[] jobs = new Job[connNo * reqNo];
+        for (int i = 0; i < jobs.length; i++) {
+            jobs[i] = new Job(10000);
+        }
+        Queue<Job> queue = new ConcurrentLinkedQueue<Job>();
+        for (int i = 0; i < jobs.length; i++) {
+            queue.add(jobs[i]);
+        }
+
+        HttpProcessor serverHttpProc = new ImmutableHttpProcessor(new HttpResponseInterceptor[] {
+                new ResponseDate(),
+                new ResponseServer(),
+                new ResponseContent(),
+                new ResponseConnControl()
+        });
+
+        ThrottlingHttpServiceHandler serviceHandler = new ThrottlingHttpServiceHandler(
+                serverHttpProc,
+                new DefaultHttpResponseFactory(),
+                new DefaultConnectionReuseStrategy(),
+                this.execService,
+                this.server.getParams());
+
+        serviceHandler.setHandlerResolver(
+                new SimpleHttpRequestHandlerResolver(new RequestHandler()));
+        serviceHandler.setEventListener(
+                new SimpleEventListener());
+
+        HttpProcessor clientHttpProc = new ImmutableHttpProcessor(new HttpRequestInterceptor[] {
+                new RequestContent(),
+                new RequestTargetHost(),
+                new RequestConnControl(),
+                new RequestUserAgent(),
+                new RequestExpectContinue()});
+
+        ThrottlingHttpClientHandler clientHandler = new ThrottlingHttpClientHandler(
+                clientHttpProc,
+                requestExecutionHandler,
+                new DefaultConnectionReuseStrategy(),
+                this.execService,
+                this.client.getParams());
+
+        clientHandler.setEventListener(
+                new SimpleEventListener());
+
+        this.server.start(serviceHandler);
+        this.client.start(clientHandler);
+
+        ListenerEndpoint endpoint = this.server.getListenerEndpoint();
+        endpoint.waitFor();
+        InetSocketAddress serverAddress = (InetSocketAddress) endpoint.getAddress();
+
+        Assert.assertEquals(""Test server status"", IOReactorStatus.ACTIVE, this.server.getStatus());
+
+        Queue<SessionRequest> connRequests = new LinkedList<SessionRequest>();
+        for (int i = 0; i < connNo; i++) {
+            SessionRequest sessionRequest = this.client.openConnection(
+                    new InetSocketAddress(""localhost"", serverAddress.getPort()),
+                    queue);
+            connRequests.add(sessionRequest);
+        }
+
+        while (!connRequests.isEmpty()) {
+            SessionRequest sessionRequest = connRequests.remove();
+            sessionRequest.waitFor();
+            if (sessionRequest.getException() != null) {
+                throw sessionRequest.getException();
+            }
+            Assert.assertNotNull(sessionRequest.getSession());
+        }
+
+        Assert.assertEquals(""Test client status"", IOReactorStatus.ACTIVE, this.client.getStatus());
+
+        for (int i = 0; i < jobs.length; i++) {
+            Job testjob = jobs[i];
+            testjob.waitFor();
+            if (testjob.isSuccessful()) {
+                Assert.assertEquals(HttpStatus.SC_OK, testjob.getStatusCode());
+                Assert.assertEquals(testjob.getExpected(), testjob.getResult());
+            } else {
+                Assert.fail(testjob.getFailureMessage());
+            }
+        }
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers#testSimpleHttpGets,apache-httpcore,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers,testSimpleHttpGets,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestThrottlingNHttpHandlers.java,"@Test
+    public void testSimpleHttpGets() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                return new BasicHttpRequest(""GET"", s);
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers#testSimpleHttpPostsChunked,apache-httpcore,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers,testSimpleHttpPostsChunked,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestThrottlingNHttpHandlers.java,"@Test
+    public void testSimpleHttpPostsChunked() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                    entity.setChunked(true);
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers#testSimpleHttpPostsHTTP10,apache-httpcore,org.apache.http.nio.protocol.TestThrottlingNHttpHandlers,testSimpleHttpPostsHTTP10,httpcore-nio,httpcore-nio/src/test/java/org/apache/http/nio/protocol/TestThrottlingNHttpHandlers.java,"@Test
+    public void testSimpleHttpPostsHTTP10() throws Exception {
+        HttpRequestExecutionHandler requestExecutionHandler = new RequestExecutionHandler() {
+
+            @Override
+            protected HttpRequest generateRequest(Job testjob) {
+                String s = testjob.getPattern() + ""x"" + testjob.getCount();
+                HttpEntityEnclosingRequest r = new BasicHttpEntityEnclosingRequest(""POST"", s,
+                        HttpVersion.HTTP_1_0);
+                NStringEntity entity = null;
+                try {
+                    entity = new NStringEntity(testjob.getExpected(), ""US-ASCII"");
+                } catch (UnsupportedEncodingException ignore) {
+                }
+                r.setEntity(entity);
+                return r;
+            }
+
+        };
+        executeStandardTest(new RequestHandler(), requestExecutionHandler);
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.pool.TestConnPool#testCloseExpired,apache-httpcore,org.apache.http.pool.TestConnPool,testCloseExpired,httpcore,httpcore/src/test/java/org/apache/http/pool/TestConnPool.java,"@Test
+    public void testCloseExpired() throws Exception {
+        HttpConnectionFactory connFactory = Mockito.mock(HttpConnectionFactory.class);
+
+        HttpConnection conn1 = Mockito.mock(HttpConnection.class);
+        Mockito.when(conn1.isOpen()).thenReturn(Boolean.FALSE);
+        HttpConnection conn2 = Mockito.mock(HttpConnection.class);
+        Mockito.when(conn2.isOpen()).thenReturn(Boolean.TRUE);
+
+        Mockito.when(connFactory.create(Mockito.eq(""somehost""))).thenReturn(conn1, conn2);
+
+        LocalConnPool pool = new LocalConnPool(connFactory, 2, 2);
+
+        Future<LocalPoolEntry> future1 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry1 = future1.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry1);
+        Future<LocalPoolEntry> future2 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry2 = future2.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry2);
+
+        entry1.updateExpiry(1, TimeUnit.MILLISECONDS);
+        pool.release(entry1, true);
+
+        Thread.sleep(200);
+
+        entry2.updateExpiry(1000, TimeUnit.SECONDS);
+        pool.release(entry2, true);
+
+        pool.closeExpired();
+
+        Mockito.verify(conn1).close();
+        Mockito.verify(conn2, Mockito.never()).close();
+
+        PoolStats totals = pool.getTotalStats();
+        Assert.assertEquals(1, totals.getAvailable());
+        Assert.assertEquals(0, totals.getLeased());
+        PoolStats stats = pool.getStats(""somehost"");
+        Assert.assertEquals(1, stats.getAvailable());
+        Assert.assertEquals(0, stats.getLeased());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.pool.TestConnPool#testCloseIdle,apache-httpcore,org.apache.http.pool.TestConnPool,testCloseIdle,httpcore,httpcore/src/test/java/org/apache/http/pool/TestConnPool.java,"@Test
+    public void testCloseIdle() throws Exception {
+        HttpConnectionFactory connFactory = Mockito.mock(HttpConnectionFactory.class);
+
+        HttpConnection conn1 = Mockito.mock(HttpConnection.class);
+        HttpConnection conn2 = Mockito.mock(HttpConnection.class);
+
+        Mockito.when(connFactory.create(Mockito.eq(""somehost""))).thenReturn(conn1, conn2);
+
+        LocalConnPool pool = new LocalConnPool(connFactory, 2, 2);
+
+        Future<LocalPoolEntry> future1 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry1 = future1.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry1);
+        Future<LocalPoolEntry> future2 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry2 = future2.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry2);
+
+        entry1.updateExpiry(0, TimeUnit.MILLISECONDS);
+        pool.release(entry1, true);
+
+        Thread.sleep(200L);
+
+        entry2.updateExpiry(0, TimeUnit.MILLISECONDS);
+        pool.release(entry2, true);
+
+        pool.closeIdle(50, TimeUnit.MILLISECONDS);
+
+        Mockito.verify(conn1).close();
+        Mockito.verify(conn2, Mockito.never()).close();
+
+        PoolStats totals = pool.getTotalStats();
+        Assert.assertEquals(1, totals.getAvailable());
+        Assert.assertEquals(0, totals.getLeased());
+        PoolStats stats = pool.getStats(""somehost"");
+        Assert.assertEquals(1, stats.getAvailable());
+        Assert.assertEquals(0, stats.getLeased());
+
+        pool.closeIdle(-1, TimeUnit.MILLISECONDS);
+
+        Mockito.verify(conn2).close();
+
+        totals = pool.getTotalStats();
+        Assert.assertEquals(0, totals.getAvailable());
+        Assert.assertEquals(0, totals.getLeased());
+        stats = pool.getStats(""somehost"");
+        Assert.assertEquals(0, stats.getAvailable());
+        Assert.assertEquals(0, stats.getLeased());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.pool.TestConnPool#testCreateNewIfExpired,apache-httpcore,org.apache.http.pool.TestConnPool,testCreateNewIfExpired,httpcore,httpcore/src/test/java/org/apache/http/pool/TestConnPool.java,"@Test
+    public void testCreateNewIfExpired() throws Exception {
+        HttpConnectionFactory connFactory = Mockito.mock(HttpConnectionFactory.class);
+
+        HttpConnection conn1 = Mockito.mock(HttpConnection.class);
+        Mockito.when(connFactory.create(Mockito.eq(""somehost""))).thenReturn(conn1);
+
+        LocalConnPool pool = new LocalConnPool(connFactory, 2, 2);
+
+        Future<LocalPoolEntry> future1 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry1 = future1.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry1);
+
+        Mockito.verify(connFactory, Mockito.times(1)).create(Mockito.eq(""somehost""));
+
+        entry1.updateExpiry(1, TimeUnit.MILLISECONDS);
+        pool.release(entry1, true);
+
+        Thread.sleep(200L);
+
+        Future<LocalPoolEntry> future2 = pool.lease(""somehost"", null);
+        LocalPoolEntry entry2 = future2.get(1, TimeUnit.SECONDS);
+        Assert.assertNotNull(entry2);
+
+        Mockito.verify(connFactory, Mockito.times(2)).create(Mockito.eq(""somehost""));
+
+        PoolStats totals = pool.getTotalStats();
+        Assert.assertEquals(0, totals.getAvailable());
+        Assert.assertEquals(1, totals.getLeased());
+        PoolStats stats = pool.getStats(""somehost"");
+        Assert.assertEquals(0, stats.getAvailable());
+        Assert.assertEquals(1, stats.getLeased());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.pool.TestConnPool#testLeaseTimeout,apache-httpcore,org.apache.http.pool.TestConnPool,testLeaseTimeout,httpcore,httpcore/src/test/java/org/apache/http/pool/TestConnPool.java,"@Test
+    public void testLeaseTimeout() throws Exception {
+        HttpConnectionFactory connFactory = Mockito.mock(HttpConnectionFactory.class);
+
+        HttpConnection conn1 = Mockito.mock(HttpConnection.class);
+        Mockito.when(connFactory.create(Mockito.eq(""somehost""))).thenReturn(conn1);
+
+        LocalConnPool pool = new LocalConnPool(connFactory, 1, 1);
+
+        Future<LocalPoolEntry> future1 = pool.lease(""somehost"", null);
+        GetPoolEntryThread t1 = new GetPoolEntryThread(future1);
+        t1.start();
+        Future<LocalPoolEntry> future2 = pool.lease(""somehost"", null);
+        GetPoolEntryThread t2 = new GetPoolEntryThread(future2, 50, TimeUnit.MICROSECONDS);
+        t2.start();
+
+        t1.join(GRACE_PERIOD);
+        Assert.assertTrue(future1.isDone());
+        LocalPoolEntry entry1 = t1.getEntry();
+        Assert.assertNotNull(entry1);
+        t2.join(GRACE_PERIOD);
+        Assert.assertTrue(t2.getException() instanceof TimeoutException);
+        Assert.assertFalse(future2.isDone());
+        Assert.assertFalse(future2.isCancelled());
+    }",ok,
+https://github.com/apache/httpcore,49247d208bde47f652812493e1d3576e136b8eb8,org.apache.http.pool.TestConnPool#testStatefulConnectionRedistributionOnPerRouteMaxLimit,apache-httpcore,org.apache.http.pool.TestConnPool,testStatefulConnectionRedistributionOnPerRouteMaxLimit,httpcore,httpcore/src/test/java/org/apache/http/pool/TestConnPool.java,"@Test
+    public void testStatefulConnectionRedistributionOnPerRouteMaxLimit() throws Exception {
+        HttpConnectionFactory connFactory = Mockito.mock(HttpConnectionFactory.class);
+
+        HttpConnection conn1 = Mockito.mock(HttpConnection.class);
+        HttpConnection conn2 = Mockito.mock(HttpConnection.class);
+        HttpConnection conn3 = Mockito.mock(HttpConnection.class);
+        Mockito.when(connFactory.create(Mockito.eq(""somehost""))).thenReturn(conn1, conn2, conn3);
+
+        LocalConnPool pool = new LocalConnPool(connFactory, 2, 10);
+        pool.setMaxPerRoute(""somehost"", 2);
+        pool.setMaxTotal(2);
+
+        Future<LocalPoolEntry> future1 = pool.lease(""somehost"", null);
+        GetPoolEntryThread t1 = new GetPoolEntryThread(future1);
+        t1.start();
+        Future<LocalPoolEntry> future2 = pool.lease(""somehost"", null);
+        GetPoolEntryThread t2 = new GetPoolEntryThread(future2);
+        t2.start();
+
+        t1.join(GRACE_PERIOD);
+        Assert.assertTrue(future1.isDone());
+        LocalPoolEntry entry1 = t1.getEntry();
+        Assert.assertNotNull(entry1);
+        t2.join(GRACE_PERIOD);
+        Assert.assertTrue(future2.isDone());
+        LocalPoolEntry entry2 = t2.getEntry();
+        Assert.assertNotNull(entry2);
+
+        PoolStats totals = pool.getTotalStats();
+        Assert.assertEquals(0, totals.getAvailable());
+        Assert.assertEquals(2, totals.getLeased());
+        Assert.assertEquals(0, totals.getPending());
+
+        entry1.setState(""some-stuff"");
+        pool.release(entry1, true);
+        entry2.setState(""some-stuff"");
+        pool.release(entry2, true);
+
+        Mockito.verify(connFactory, Mockito.times(2)).create(Mockito.eq(""somehost""));
+
+        Future<LocalPoolEntry> future3 = pool.lease(""somehost"", ""some-other-stuff"");
+        GetPoolEntryThread t3 = new GetPoolEntryThread(future3);
+        t3.start();
+
+        t3.join(GRACE_PERIOD);
+        Assert.assertTrue(future3.isDone());
+        LocalPoolEntry entry3 = t3.getEntry();
+        Assert.assertNotNull(entry3);
+
+        Mockito.verify(connFactory, Mockito.times(3)).create(Mockito.eq(""somehost""));
+
+        Mockito.verify(conn1).close();
+        Mockito.verify(conn2, Mockito.never()).close();
+
+        totals = pool.getTotalStats();
+        Assert.assertEquals(1, totals.getAvailable());
+        Assert.assertEquals(1, totals.getLeased());
+    }",ok,
+https://github.com/doanduyhai/Achilles,f52f7ec93b3da758119dbbbc1be8dad8e8783764,info.archinnov.achilles.internal.statement.wrapper.RegularStatementWrapperTest#should_trace_query,doanduyhai-Achilles,info.archinnov.achilles.internal.statement.wrapper.RegularStatementWrapperTest,should_trace_query,achilles-core,achilles-core/src/test/java/info/archinnov/achilles/internal/statement/wrapper/RegularStatementWrapperTest.java,"@Test
+    public void should_trace_query() throws Exception {
+        //Given
+        wrapper = new RegularStatementWrapper(Entity1.class, rs, new Object[] { 1 }, ONE, NO_LISTENER, NO_SERIAL_CONSISTENCY);
+
+        ExecutionInfo executionInfo = mock(ExecutionInfo.class, RETURNS_DEEP_STUBS);
+
+        QueryTrace.Event event = mock(QueryTrace.Event.class);
+        when(resultSet.getAllExecutionInfo()).thenReturn(Arrays.asList(executionInfo));
+        when(executionInfo.getAchievedConsistencyLevel()).thenReturn(ConsistencyLevel.ALL);
+        when(executionInfo.getQueryTrace().getEvents()).thenReturn(Arrays.asList(event));
+        when(event.getDescription()).thenReturn(""description"");
+        when(event.getSource()).thenReturn(InetAddress.getLocalHost());
+        when(event.getSourceElapsedMicros()).thenReturn(100);
+        when(event.getThreadName()).thenReturn(""thread"");
+
+        //When
+        wrapper.tracing(resultSet);
+
+        //Then
+
+    }",ok,
+https://github.com/doanduyhai/Achilles,f52f7ec93b3da758119dbbbc1be8dad8e8783764,info.archinnov.achilles.test.integration.tests.ClusteredEntityIT#should_persist_with_ttl,doanduyhai-Achilles,info.archinnov.achilles.test.integration.tests.ClusteredEntityIT,should_persist_with_ttl,integration-test,integration-test/src/test/java/info/archinnov/achilles/test/integration/tests/ClusteredEntityIT.java,"@Test
+	public void should_persist_with_ttl() throws Exception {
+		compoundKey = new ClusteredKey(RandomUtils.nextLong(), RandomUtils.nextInt(), ""name"");
+
+		entity = new ClusteredEntity(compoundKey, ""clustered_value"");
+
+		manager.persist(entity, OptionsBuilder.withTtl(1));
+
+		assertThat(manager.find(ClusteredEntity.class, compoundKey)).isNotNull();
+
+		Thread.sleep(1000);
+
+		assertThat(manager.find(ClusteredEntity.class, compoundKey)).isNull();
+	}",ok,
+https://github.com/doanduyhai/Achilles,f52f7ec93b3da758119dbbbc1be8dad8e8783764,info.archinnov.achilles.test.integration.tests.ClusteredEntityIT#should_update_with_ttl,doanduyhai-Achilles,info.archinnov.achilles.test.integration.tests.ClusteredEntityIT,should_update_with_ttl,integration-test,integration-test/src/test/java/info/archinnov/achilles/test/integration/tests/ClusteredEntityIT.java,"@Test
+	public void should_update_with_ttl() throws Exception {
+		compoundKey = new ClusteredKey(RandomUtils.nextLong(), RandomUtils.nextInt(), ""name"");
+		entity = new ClusteredEntity(compoundKey, ""clustered_value"");
+		entity = manager.persist(entity, OptionsBuilder.withTtl(1));
+
+		assertThat(manager.find(ClusteredEntity.class, compoundKey)).isNotNull();
+
+		Thread.sleep(1000);
+
+		assertThat(manager.find(ClusteredEntity.class, compoundKey)).isNull();
+	}",ok,
+https://github.com/doanduyhai/Achilles,f52f7ec93b3da758119dbbbc1be8dad8e8783764,info.archinnov.achilles.test.integration.tests.SecondaryIndexIT#should_return_entities_for_indexed_query,doanduyhai-Achilles,info.archinnov.achilles.test.integration.tests.SecondaryIndexIT,should_return_entities_for_indexed_query,integration-test,integration-test/src/test/java/info/archinnov/achilles/test/integration/tests/SecondaryIndexIT.java,"@Test
+    public void should_return_entities_for_indexed_query() throws Exception {
+        CompleteBean entity1 = CompleteBeanTestBuilder.builder().randomId().name(""DuyHai"").buid();
+        CompleteBean entity2 = CompleteBeanTestBuilder.builder().randomId().name(""John DOO"").buid();
+
+        manager.persist(entity1);
+        manager.persist(entity2);
+
+        IndexCondition condition = new IndexCondition(""name"", ""John DOO"");
+        List<CompleteBean> actual = manager.indexedQuery(CompleteBean.class, condition).get();
+
+        assertThat(actual).hasSize(1);
+
+        CompleteBean found1 = actual.get(0);
+        assertThat(found1).isNotNull();
+
+    }",ok,
+https://github.com/elasticjob/elastic-job-lite,b022898e,io.elasticjob.lite.event.rdb.JobEventRdbSearchTest#assertFindJobExecutionEventsWithTime,elasticjob-elastic-job-lite,io.elasticjob.lite.event.rdb.JobEventRdbSearchTest,assertFindJobExecutionEventsWithTime,elastic-job-lite-core,elastic-job-lite-core/src/test/java/io/elasticjob/lite/event/rdb/JobEventRdbSearchTest.java,"@Test
+    public void assertFindJobExecutionEventsWithTime() {
+        Date now = new Date();
+        Date tenMinutesBefore = new Date(now.getTime() - 10 * 60 * 1000);
+        JobEventRdbSearch.Result<JobExecutionEvent> result = repository.findJobExecutionEvents(new JobEventRdbSearch.Condition(10, 1, null, null, tenMinutesBefore, null, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+        result = repository.findJobExecutionEvents(new JobEventRdbSearch.Condition(10, 1, null, null, now, null, null));
+        assertThat(result.getTotal(), is(0));
+        assertThat(result.getRows().size(), is(0));
+        result = repository.findJobExecutionEvents(new JobEventRdbSearch.Condition(10, 1, null, null, null, tenMinutesBefore, null));
+        assertThat(result.getTotal(), is(0));
+        assertThat(result.getRows().size(), is(0));
+        result = repository.findJobExecutionEvents(new JobEventRdbSearch.Condition(10, 1, null, null, null, now, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+        result = repository.findJobExecutionEvents(new JobEventRdbSearch.Condition(10, 1, null, null, tenMinutesBefore, now, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+    }",ok,
+https://github.com/elasticjob/elastic-job-lite,b022898e,io.elasticjob.lite.event.rdb.JobEventRdbSearchTest#assertFindJobStatusTraceEventsWithTime,elasticjob-elastic-job-lite,io.elasticjob.lite.event.rdb.JobEventRdbSearchTest,assertFindJobStatusTraceEventsWithTime,elastic-job-lite-core,elastic-job-lite-core/src/test/java/io/elasticjob/lite/event/rdb/JobEventRdbSearchTest.java,"@Test
+    public void assertFindJobStatusTraceEventsWithTime() {
+        Date now = new Date();
+        Date tenMinutesBefore = new Date(now.getTime() - 10 * 60 * 1000);
+        JobEventRdbSearch.Result<JobStatusTraceEvent> result = repository.findJobStatusTraceEvents(new JobEventRdbSearch.Condition(10, 1, null, null, tenMinutesBefore, null, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+        result = repository.findJobStatusTraceEvents(new JobEventRdbSearch.Condition(10, 1, null, null, now, null, null));
+        assertThat(result.getTotal(), is(0));
+        assertThat(result.getRows().size(), is(0));
+        result = repository.findJobStatusTraceEvents(new JobEventRdbSearch.Condition(10, 1, null, null, null, tenMinutesBefore, null));
+        assertThat(result.getTotal(), is(0));
+        assertThat(result.getRows().size(), is(0));
+        result = repository.findJobStatusTraceEvents(new JobEventRdbSearch.Condition(10, 1, null, null, null, now, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+        result = repository.findJobStatusTraceEvents(new JobEventRdbSearch.Condition(10, 1, null, null, tenMinutesBefore, now, null));
+        assertThat(result.getTotal(), is(500));
+        assertThat(result.getRows().size(), is(10));
+    }",ok,
+https://github.com/elasticjob/elastic-job-lite,b022898e,io.elasticjob.lite.reg.zookeeper.ZookeeperRegistryCenterQueryWithoutCacheTest#assertGetRegistryCenterTime,elasticjob-elastic-job-lite,io.elasticjob.lite.reg.zookeeper.ZookeeperRegistryCenterQueryWithoutCacheTest,assertGetRegistryCenterTime,elastic-job-lite-core,elastic-job-lite-core/src/test/java/io/elasticjob/lite/reg/zookeeper/ZookeeperRegistryCenterQueryWithoutCacheTest.java,"@Test
+    public void assertGetRegistryCenterTime() {
+        long regCenterTime = zkRegCenter.getRegistryCenterTime(""/_systemTime/current"");
+        assertTrue(regCenterTime <= System.currentTimeMillis());
+        long updatedRegCenterTime = zkRegCenter.getRegistryCenterTime(""/_systemTime/current"");
+        System.out.println(regCenterTime + "","" + updatedRegCenterTime);
+        assertTrue(regCenterTime < updatedRegCenterTime);
+    }",ok,
+https://github.com/jknack/handlebars.java,db77ef2b6fd2bac7498b4124b95c47f753cf3a2f,com.github.jknack.handlebars.HumanizeHelperTest#naturalTime,jknack-handlebars.java,com.github.jknack.handlebars.HumanizeHelperTest,naturalTime,handlebars-humanize,handlebars-humanize/src/test/java/com/github/jknack/handlebars/HumanizeHelperTest.java,"@Test
+  public void naturalTime() throws IOException, InterruptedException {
+    Calendar calendar = Calendar.getInstance();
+
+    Date now = calendar.getTime();
+
+    Thread.sleep(1000);
+
+    assertEquals(""moments ago"",
+        handlebars.compile(""{{naturalTime this locale=\""en_US\""}}"")
+            .apply(now));
+
+  }",ok,
+https://github.com/joel-costigliola/assertj-core,22be3825d4e7b1561cfdfa131446b24d6462b305,org.assertj.core.api.date.DateAssert_with_string_based_date_representation_Test#date_assertion_should_support_timestamp_string_representation,joel-costigliola-assertj-core,org.assertj.core.api.date.DateAssert_with_string_based_date_representation_Test,date_assertion_should_support_timestamp_string_representation,.,src/test/java/org/assertj/core/api/date/DateAssert_with_string_based_date_representation_Test.java,"@Test
+  public void date_assertion_should_support_timestamp_string_representation() {
+    Date date = new Date();
+    Timestamp timestamp = new Timestamp(date.getTime());
+    // 2015-04-12 21:25:12.293
+    String timestampAsString = timestamp.toString(); // 2015-04-12 21:25:12.293
+
+    assertThat(date).isEqualTo(timestampAsString);
+  }",ok,
+https://github.com/ninjaframework/ninja,b1b58e874188e0aa2e80cfa020a284213a587f09,controllers.ApplicationControllerTest#testThatHomepageWorks,ninjaframework-ninja,controllers.ApplicationControllerTest,testThatHomepageWorks,ninja-servlet-integration-test,,,failed,Method 'testThatHomepageWorks' was not found in class 'ApplicationControllerTest'
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.net.SMTPAppender_GreenTest#testCustomBufferSize,qos-ch-logback,ch.qos.logback.classic.net.SMTPAppender_GreenTest,testCustomBufferSize,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/net/SMTPAppender_GreenTest.java,"@Test
+  public void testCustomBufferSize() throws Exception {
+    configure(ClassicTestConstants.JORAN_INPUT_PREFIX
+            + ""smtp/customBufferSize.xml"");
+
+    logger.debug(""invisible1"");
+    logger.debug(""invisible2"");
+    String msg = ""hello"";
+    logger.error(msg);
+    waitUntilEmailIsSent();
+    MimeMultipart mp = verifyAndExtractMimeMultipart(""testCustomBufferSize "" + this.getClass().getName() + "" - "" + msg);
+    String body = GreenMailUtil.getBody(mp.getBodyPart(0));
+    assertEquals(msg, body);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.net.SMTPAppender_GreenTest#testCustomEvaluator,qos-ch-logback,ch.qos.logback.classic.net.SMTPAppender_GreenTest,testCustomEvaluator,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/net/SMTPAppender_GreenTest.java,"@Test
+  public void testCustomEvaluator() throws Exception {
+    configure(ClassicTestConstants.JORAN_INPUT_PREFIX
+            + ""smtp/customEvaluator.xml"");
+
+    logger.debug(""test"");
+    String msg2 = ""CustomEvaluator"";
+    logger.debug(msg2);
+    logger.debug(""invisible"");
+    waitUntilEmailIsSent();
+    MimeMultipart mp = verifyAndExtractMimeMultipart(""testCustomEvaluator "" + this.getClass().getName() + "" - "" + msg2);
+    String body = GreenMailUtil.getBody(mp.getBodyPart(0));
+    assertEquals(""testCustomEvaluator"", body);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.pattern.ConverterTest#testRelativeTime,qos-ch-logback,ch.qos.logback.classic.pattern.ConverterTest,testRelativeTime,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/pattern/ConverterTest.java,"@Test
+  public void testRelativeTime() throws Exception {
+    DynamicConverter<ILoggingEvent> converter = new RelativeTimeConverter();
+    StringBuilder buf0 = new StringBuilder();
+    StringBuilder buf1 = new StringBuilder();
+    ILoggingEvent e0 = makeLoggingEvent(null);
+    ILoggingEvent e1 = makeLoggingEvent(null);
+    converter.write(buf0, e0);
+    converter.write(buf1, e1);
+    assertEquals(buf0.toString(), buf1.toString());
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.rolling.UniqueFileTest#basic,qos-ch-logback,ch.qos.logback.classic.rolling.UniqueFileTest,basic,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/rolling/UniqueFileTest.java,"@Test
+  public void basic() throws Exception {
+    loadConfig(ClassicTestConstants.JORAN_INPUT_PREFIX + ""unique.xml"");
+    CachingDateFormatter sdf = new CachingDateFormatter(""yyyyMMdd'T'HHmmss"");
+    String timestamp = sdf.format(System.currentTimeMillis());
+
+    sc.assertIsErrorFree();
+
+    Logger root = lc.getLogger(Logger.ROOT_LOGGER_NAME);
+    root.info(""hello"");
+    
+    ScaffoldingForRollingTests.existenceCheck(CoreTestConstants.OUTPUT_DIR_PREFIX+""TS_""+timestamp+""log.txt"");
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.spi.PackagingDataCalculatorTest#perfTest,qos-ch-logback,ch.qos.logback.classic.spi.PackagingDataCalculatorTest,perfTest,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/spi/PackagingDataCalculatorTest.java,"@Test
+  public void perfTest() {
+    int len = 1000;
+    loop(len, false);
+    loop(len, true);
+
+    double d0 = loop(len, false);
+    System.out.println(""without packaging info "" + d0 + "" microseconds"");
+
+    double d1 = loop(len, true);
+    System.out.println(""with    packaging info "" + d1 + "" microseconds"");
+
+    int slackFactor = 8;
+    if (!SystemInfo.getJavaVendor().contains(""Sun"")) {
+      // be more lenient with other JDKs
+      slackFactor = 10;
+    }
+    assertTrue(""computing class packaging data ("" + d1
+        + "") should have been less than "" + slackFactor
+        + "" times the time it takes to process an exception ""
+        + (d0 * slackFactor), d0 * slackFactor > d1);
+
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.turbo.ReconfigureOnChangeTest#gafferInstallFilter,qos-ch-logback,ch.qos.logback.classic.turbo.ReconfigureOnChangeTest,gafferInstallFilter,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/turbo/ReconfigureOnChangeTest.java,"@Test
+  public void gafferInstallFilter() throws JoranException, IOException, InterruptedException {
+    File file = new File(G_SCAN1_FILE_AS_STR);
+    gConfigure(file);
+    List<File> fileList = getConfigurationFileList(loggerContext);
+    assertThatListContainsFile(fileList, file);
+    assertThatFirstFilterIsROCF();
+
+    rocfDetachReconfigurationToNewThreadAndAwaitTermination();
+
+    fileList = getConfigurationFileList(loggerContext);
+    assertThatListContainsFile(fileList, file);
+    assertThatFirstFilterIsROCF();
+
+    // check that rcof filter installed on two occasions
+    assertEquals(2, checker.matchCount(""Will scan for changes in""));
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.classic.turbo.ReconfigureOnChangeTest#scan_LOGBACK_474,qos-ch-logback,ch.qos.logback.classic.turbo.ReconfigureOnChangeTest,scan_LOGBACK_474,logback-classic,logback-classic/src/test/java/ch/qos/logback/classic/turbo/ReconfigureOnChangeTest.java,"@Test(timeout = 4000L)
+  public void scan_LOGBACK_474() throws JoranException, IOException,
+          InterruptedException {
+    File file = new File(SCAN_LOGBACK_474_FILE_AS_STR);
+    configure(file);
+
+    RunnableWithCounterAndDone[] runnableArray = buildRunnableArray(file, UpdateType.TOUCH);
+    harness.execute(runnableArray);
+
+    loggerContext.getStatusManager().add(
+            new InfoStatus(""end of execution "", this));
+
+    verify(expectedResets);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.AsyncAppenderBaseTest#workerShouldStopEvenIfInterruptExceptionConsumedWithinSubappender,qos-ch-logback,ch.qos.logback.core.AsyncAppenderBaseTest,workerShouldStopEvenIfInterruptExceptionConsumedWithinSubappender,logback-core,logback-core/src/test/java/ch/qos/logback/core/AsyncAppenderBaseTest.java,"@Test(timeout = 2000)
+  public void workerShouldStopEvenIfInterruptExceptionConsumedWithinSubappender() {
+    delayingListAppender.delay = 100;
+    asyncAppenderBase.addAppender(delayingListAppender);
+    asyncAppenderBase.start();
+    asyncAppenderBase.doAppend(0);
+    asyncAppenderBase.stop();
+    verify(delayingListAppender, 1);
+    assertTrue(delayingListAppender.interrupted);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.FileAppenderResilienceTest#smoke,qos-ch-logback,ch.qos.logback.core.FileAppenderResilienceTest,smoke,logback-core,logback-core/src/test/java/ch/qos/logback/core/FileAppenderResilienceTest.java,"@Test
+  public void smoke() throws InterruptedException, IOException {
+    Runner runner = new Runner(fa);
+    Thread t = new Thread(runner);
+    t.start();
+
+    double delayCoefficient = 2.0;
+    for (int i = 0; i < 5; i++) {
+      Thread.sleep((int)(RecoveryCoordinator.BACKOFF_COEFFICIENT_MIN * delayCoefficient));
+      closeLogFileOnPurpose();
+    }
+    runner.setDone(true);
+    t.join();
+
+    double bestCaseSuccessRatio = 1/delayCoefficient;
+    // expect to loose at most 35% of the events
+    double lossinessFactor = 0.35;
+    double resilianceFactor = (1-lossinessFactor);
+
+    ResilienceUtil
+              .verify(logfileStr, ""^hello (\\d{1,5})$"", runner.getCounter(), bestCaseSuccessRatio * resilianceFactor);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.net.DefaultSocketConnectorTest#testConnectionFails,qos-ch-logback,ch.qos.logback.core.net.DefaultSocketConnectorTest,testConnectionFails,logback-core,logback-core/src/test/java/ch/qos/logback/core/net/DefaultSocketConnectorTest.java,"@Test
+  public void testConnectionFails() throws Exception {
+    serverSocket.close();
+    Future<Socket> connectorTask = executor.submit(connector);
+
+    // this connection attempt will always timeout
+    try {
+      connectorTask.get(SHORT_DELAY, TimeUnit.MILLISECONDS);
+      fail();
+    } catch(TimeoutException e) {
+    }
+    Exception lastException = exceptionHandler.awaitConnectionFailed(DELAY);
+    assertTrue(lastException instanceof ConnectException);
+    assertFalse(connectorTask.isDone());
+    connectorTask.cancel(true);
+
+    //thread.join(4 * DELAY);
+    assertTrue(connectorTask.isCancelled());
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.recovery.RecoveryCoordinatorTest#actualTime,qos-ch-logback,ch.qos.logback.core.recovery.RecoveryCoordinatorTest,actualTime,logback-core,logback-core/src/test/java/ch/qos/logback/core/recovery/RecoveryCoordinatorTest.java,"@Test
+  public void actualTime() throws InterruptedException {
+    assertTrue(rc.isTooSoon());
+    Thread.sleep(RecoveryCoordinator.BACKOFF_COEFFICIENT_MIN+20);
+    assertFalse(rc.isTooSoon());
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.recovery.ResilientOutputStreamTest#verifyRecuperationAfterFailure,qos-ch-logback,ch.qos.logback.core.recovery.ResilientOutputStreamTest,verifyRecuperationAfterFailure,logback-core,logback-core/src/test/java/ch/qos/logback/core/recovery/ResilientOutputStreamTest.java,"@Test
+   public void verifyRecuperationAfterFailure() throws Exception {
+     File file = new File(CoreTestConstants.OUTPUT_DIR_PREFIX+""resilient""+diff+"".log"");
+     ResilientFileOutputStream rfos = new ResilientFileOutputStream(file, true);
+     rfos.setContext(context);
+
+     ResilientFileOutputStream spy = spy(rfos);
+
+     spy.write(""a"".getBytes());
+     spy.flush();
+
+     spy.getChannel().close();
+     spy.write(""b"".getBytes());
+     spy.flush();
+     Thread.sleep(RecoveryCoordinator.BACKOFF_COEFFICIENT_MIN+10);
+     spy.write(""c"".getBytes());
+     spy.flush();
+     verify(spy).openNewOutputStream();
+
+   }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.rolling.TimeBasedRollingTest#withMissingTargetDirWithCompression,qos-ch-logback,ch.qos.logback.core.rolling.TimeBasedRollingTest,withMissingTargetDirWithCompression,logback-core,logback-core/src/test/java/ch/qos/logback/core/rolling/TimeBasedRollingTest.java,"@Test
+  public void withMissingTargetDirWithCompression() throws IOException {
+    defaultTest(""test7"", ""%d{yyyy-MM-dd, aux}/"", "".gz"", FILE_OPTION_SET, NO_RESTART);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.rolling.TimeBasedRollingTest#withMissingTargetDirWithZipCompression,qos-ch-logback,ch.qos.logback.core.rolling.TimeBasedRollingTest,withMissingTargetDirWithZipCompression,logback-core,logback-core/src/test/java/ch/qos/logback/core/rolling/TimeBasedRollingTest.java,"@Test
+  public void withMissingTargetDirWithZipCompression() throws IOException {
+    defaultTest(""test8"", ""%d{yyyy-MM-dd, aux}/"", "".zip"", FILE_OPTION_SET, NO_RESTART);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.rolling.TimeBasedRollingWithArchiveRemoval_Test#dailyRolloverWithInactivity10,qos-ch-logback,ch.qos.logback.core.rolling.TimeBasedRollingWithArchiveRemoval_Test,dailyRolloverWithInactivity10,logback-core,logback-core/src/test/java/ch/qos/logback/core/rolling/TimeBasedRollingWithArchiveRemoval_Test.java,"@Test
+  public void dailyRolloverWithInactivity10() {
+    int maxHistory = 6;
+    int simulatedNumberOfPeriods = 10;
+    int startInactivity = 3;
+    int numInactivityPeriods = 4;
+    generateDailyRollover(currentTime, maxHistory, simulatedNumberOfPeriods, startInactivity, numInactivityPeriods);
+  }",ok,
+https://github.com/qos-ch/logback,0f57531977287fd3d8c9046e9f68e281715f3b10,ch.qos.logback.core.util.FileUtilTest#basicCopyingWorks,qos-ch-logback,ch.qos.logback.core.util.FileUtilTest,basicCopyingWorks,logback-core,logback-core/src/test/java/ch/qos/logback/core/util/FileUtilTest.java,"@Test
+  public void basicCopyingWorks() throws IOException {
+    String dir = CoreTestConstants.OUTPUT_DIR_PREFIX+""/fu""+diff;
+
+    File dirFile  = new File(dir);
+    dirFile.mkdir();
+
+    String src = CoreTestConstants.TEST_INPUT_PREFIX + ""compress1.copy"";
+    String target = CoreTestConstants.OUTPUT_DIR_PREFIX+""/fu""+diff+""/copyingWorks.txt"";
+
+    fileUtil.copy(src, target);
+    Compare.compare(src, target);
+  }",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario0,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario0,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario0() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario1,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario1,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario1() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario2,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario2,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario2() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario3,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario3,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario3() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario5,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario5,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario5() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario6,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario6,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario6() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario7,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario7,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario7() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario8,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario8,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario8() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectBlockingScenario9,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectBlockingScenario9,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectBlockingScenario9() throws Exception {
+		runTestScenarioReconnect( true );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario0,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario0,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario0() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario1,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario1,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario1() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario2,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario2,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario2() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario3,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario3,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario3() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario4,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario4,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario4() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario5,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario5,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario5() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario7,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario7,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario7() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario8,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario8,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario8() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue256Test#runReconnectScenario9,tootallnate-java-websocket,org.java_websocket.issues.Issue256Test,runReconnectScenario9,.,src/test/java/org/java_websocket/issues/Issue256Test.java,"@Test(timeout = 5000)
+	public void runReconnectScenario9() throws Exception {
+		runTestScenarioReconnect( false );
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue580Test#runNoCloseBlockingTestScenario7,tootallnate-java-websocket,org.java_websocket.issues.Issue580Test,runNoCloseBlockingTestScenario7,.,src/test/java/org/java_websocket/issues/Issue580Test.java,"@Test
+	public void runNoCloseBlockingTestScenario7() throws Exception {
+		runTestScenario(false);
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.issues.Issue677Test#testIssue,tootallnate-java-websocket,org.java_websocket.issues.Issue677Test,testIssue,.,src/test/java/org/java_websocket/issues/Issue677Test.java,"@Test
+	public void testIssue() throws Exception {
+		int port = SocketUtil.getAvailablePort();
+		WebSocketClient webSocket0 = new WebSocketClient( new URI( ""ws://localhost:"" + port ) ) {
+			@Override
+			public void onOpen( ServerHandshake handshakedata ) {
+
+			}
+
+			@Override
+			public void onMessage( String message ) {
+
+			}
+
+			@Override
+			public void onClose( int code, String reason, boolean remote ) {
+				countDownLatch0.countDown();
+			}
+
+			@Override
+			public void onError( Exception ex ) {
+
+			}
+		};
+		WebSocketClient webSocket1 = new WebSocketClient( new URI( ""ws://localhost:"" + port ) ) {
+			@Override
+			public void onOpen( ServerHandshake handshakedata ) {
+			}
+
+			@Override
+			public void onMessage( String message ) {
+			}
+
+			@Override
+			public void onClose( int code, String reason, boolean remote ) {
+			}
+
+			@Override
+			public void onError( Exception ex ) {
+
+			}
+		};
+		WebSocketServer server = new WebSocketServer( new InetSocketAddress( port ) ) {
+			@Override
+			public void onOpen( WebSocket conn, ClientHandshake handshake ) {
+			}
+
+			@Override
+			public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
+			}
+
+			@Override
+			public void onMessage( WebSocket conn, String message ) {
+
+			}
+
+			@Override
+			public void onError( WebSocket conn, Exception ex ) {
+
+			}
+
+			@Override
+			public void onStart() {
+				countServerDownLatch.countDown();
+			}
+		};
+		server.start();
+		countServerDownLatch.await();
+		webSocket0.connectBlocking();
+		assertTrue( ""webSocket.isOpen()"", webSocket0.isOpen() );
+		webSocket0.close();
+		assertTrue( ""webSocket.isClosing()"", webSocket0.isClosing() );
+		countDownLatch0.await();
+		assertTrue( ""webSocket.isClosed()"", webSocket0.isClosed() );
+		webSocket1.connectBlocking();
+		assertTrue( ""webSocket.isOpen()"", webSocket1.isOpen() );
+		webSocket1.closeConnection(CloseFrame.ABNORMAL_CLOSE, ""Abnormal close!"");
+		assertTrue( ""webSocket.isClosed()"", webSocket1.isClosed() );
+		server.stop();
+	}",ok,
+https://github.com/tootallnate/java-websocket,fa3909c3,org.java_websocket.protocols.ProtoclHandshakeRejectionTest#testHandshakeRejectionTestCase10,tootallnate-java-websocket,org.java_websocket.protocols.ProtoclHandshakeRejectionTest,testHandshakeRejectionTestCase10,.,src/test/java/org/java_websocket/protocols/ProtoclHandshakeRejectionTest.java,"@Test(timeout = 5000)
+	public void testHandshakeRejectionTestCase10() throws Exception {
+		testProtocolRejection( 10, new Draft_6455( Collections.<IExtension>emptyList(), Collections.<IProtocol>singletonList( new Protocol( ""chat"" ) ) ) );
+	}",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.cache.support.TestDefaultSynchronizedCacheStrategyDecorator#shouldCheckOnlyAfterTimeout,wro4j-wro4j,ro.isdc.wro.cache.support.TestDefaultSynchronizedCacheStrategyDecorator,shouldCheckOnlyAfterTimeout,wro4j-core,wro4j-core/src/test/java/ro/isdc/wro/cache/support/TestDefaultSynchronizedCacheStrategyDecorator.java,"@Test
+  public void shouldCheckOnlyAfterTimeout() throws Exception {
+    final long updatePeriod = 10;
+    final long delta = 5;
+    Context.get().getConfig().setResourceWatcherUpdatePeriod(updatePeriod);
+    final CacheKey key = new CacheKey(""g1"", ResourceType.JS, true);
+    final long start = System.currentTimeMillis();
+    do {
+      victim.get(key);
+    } while (System.currentTimeMillis() - start < updatePeriod - delta);
+    Mockito.verify(mockResourceWatcher, times(1)).check(key);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestBourbonCssProcessor#shouldBeThreadSafe,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestBourbonCssProcessor,shouldBeThreadSafe,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestBourbonCssProcessor.java,"@Test
+  public void shouldBeThreadSafe() throws Exception {
+    final Callable<Void> task = new Callable<Void>() {
+      public Void call() {
+        try {
+          processor.process(new StringReader(""h3#heading {  font-size: modular-scale(14px, 1, 1.618); }""), new StringWriter());
+        } catch (final Exception e) {
+          throw new RuntimeException(e);
+        }
+        return null;
+      }
+    };
+    WroTestUtils.runConcurrently(task);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor#executeMultipleTimesDoesntThrowOutOfMemoryException,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor,executeMultipleTimesDoesntThrowOutOfMemoryException,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestRubySassCssProcessor.java,"@Test
+  public void executeMultipleTimesDoesntThrowOutOfMemoryException() {
+    final RubySassEngine engine = new RubySassEngine();
+    for (int i = 0; i < 100; i++) {
+      engine.process(""#navbar {width: 80%;}"");
+    }
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor#shouldBeThreadSafe,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor,shouldBeThreadSafe,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestRubySassCssProcessor.java,"@Test
+  public void shouldBeThreadSafe()
+      throws Exception {
+    final Callable<Void> task = new Callable<Void>() {
+      @Override
+      public Void call() {
+        try {
+          processor.process(new StringReader(
+              ""$side: top;$radius: 10px;.rounded-#{$side} {border-#{$side}-radius: $radius;}""), new StringWriter());
+        } catch (final Exception e) {
+          throw new RuntimeException(e);
+        }
+        return null;
+      }
+    };
+    WroTestUtils.runConcurrently(task);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor#shouldFailWhenInvalidSassCssIsProcessed,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor,shouldFailWhenInvalidSassCssIsProcessed,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestRubySassCssProcessor.java,"@Test
+  public void shouldFailWhenInvalidSassCssIsProcessed()
+      throws Exception {
+    final File testFolder = new File(url.getFile(), ""invalid"");
+    WroTestUtils.forEachFileInFolder(testFolder, new Function<File, Void>() {
+      @Override
+      public Void apply(final File input)
+          throws Exception {
+        try {
+          processor.process(null, new FileReader(input), new StringWriter());
+          fail(""Shouldn't have failed"");
+        } catch (final WroRuntimeException e) {
+          // expected to throw exception, continue
+        }
+        return null;
+      }
+    });
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor#shouldSucceedAfterAFailure,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor,shouldSucceedAfterAFailure,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestRubySassCssProcessor.java,"@Test
+  public void shouldSucceedAfterAFailure()
+      throws Exception {
+    try {
+      processor.process(null, new StringReader(""$base= #f938ab;""), new StringWriter());
+      fail(""Should have failed"");
+    } catch (final Exception e) {
+
+    }
+    final String sass = "".valid {color: red}  @mixin rounded($side, $radius: 10px) { border-#{$side}-radius: $radius; -moz-border-radius-#{$side}: $radius; -webkit-border-#{$side}-radius: $radius;}#navbar li { @include rounded(top); }"";
+    processor.process(null, new StringReader(sass), new StringWriter());
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor#shouldTestFromFolder,wro4j-wro4j,ro.isdc.wro.extensions.processor.TestRubySassCssProcessor,shouldTestFromFolder,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/TestRubySassCssProcessor.java,"@Test
+  public void shouldTestFromFolder()
+      throws Exception {
+    final File testFolder = new File(url.getFile(), ""test"");
+    final File expectedFolder = new File(url.getFile(), ""expected"");
+    WroTestUtils.compareFromDifferentFoldersByName(testFolder, expectedFolder, ""css"", ""css"", processor);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine#cannotProcessInvalidCss,wro4j-wro4j,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine,cannotProcessInvalidCss,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/support/sass/TestRubySassEngine.java,"@Test(expected = WroRuntimeException.class)
+  public void cannotProcessInvalidCss() {
+    Assert.assertEquals(StringUtils.EMPTY, engine.process(""invalidCss""));
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine#shouldProcessValidCss,wro4j-wro4j,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine,shouldProcessValidCss,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/support/sass/TestRubySassEngine.java,"@Test
+  public void shouldProcessValidCss()
+    throws IOException {
+    Assert.assertEquals(""#element {\n  color: red; }\n"", engine.process(""#element {color: red;}""));
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine#shouldProcessValidSass,wro4j-wro4j,ro.isdc.wro.extensions.processor.support.sass.TestRubySassEngine,shouldProcessValidSass,wro4j-extensions,wro4j-extensions/src/test/java/ro/isdc/wro/extensions/processor/support/sass/TestRubySassEngine.java,"@Test
+  public void shouldProcessValidSass()
+    throws IOException {
+    Assert.assertEquals(""#element #child {\n  color: red; }\n"", engine.process(""#element { #child {color: red;}}""));
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.maven.plugin.TestWro4jMojo#shouldBeFasterWhenRunningProcessingInParallel,wro4j-wro4j,ro.isdc.wro.maven.plugin.TestWro4jMojo,shouldBeFasterWhenRunningProcessingInParallel,wro4j-maven-plugin,wro4j-maven-plugin/src/test/java/ro/isdc/wro/maven/plugin/TestWro4jMojo.java,"@Test
+  public void shouldBeFasterWhenRunningProcessingInParallel() throws Exception {
+    final long begin = System.currentTimeMillis();
+    victim.setParallelProcessing(false);
+    testMojoWithConfigurableWroManagerFactoryWithValidConfigFileSet();
+    final long endSerial = System.currentTimeMillis();
+    victim.setParallelProcessing(true);
+    testMojoWithConfigurableWroManagerFactoryWithValidConfigFileSet();
+    final long endParallel = System.currentTimeMillis();
+
+    final long serial = endSerial - begin;
+    final long parallel = endParallel - endSerial;
+    LOG.info(""serial took: {}ms"", serial);
+    LOG.info(""parallel took: {}ms"", parallel);
+    assertTrue(serial > parallel);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.model.resource.locator.TestUrlUriLocator#testValidUrl,wro4j-wro4j,ro.isdc.wro.model.resource.locator.TestUrlUriLocator,testValidUrl,wro4j-core,wro4j-core/src/test/java/ro/isdc/wro/model/resource/locator/TestUrlUriLocator.java,"@Test
+  public void testValidUrl()
+      throws IOException {
+    victim.locate(""http://www.google.com"");
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.model.resource.locator.support.TestDispatcherStreamLocator#canLocateValidResource,wro4j-wro4j,ro.isdc.wro.model.resource.locator.support.TestDispatcherStreamLocator,canLocateValidResource,wro4j-core,wro4j-core/src/test/java/ro/isdc/wro/model/resource/locator/support/TestDispatcherStreamLocator.java,"@Test
+  public void canLocateValidResource()
+      throws Exception {
+    when(mockRequest.getRequestURL()).thenReturn(new StringBuffer(""""));
+    assertNotNull(victim.getInputStream(mockRequest, mockResponse, ""http://www.google.com""));
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.util.concurrent.TestTaskExecutor#shouldBeFasterWhenRunningMultipleSlowTasks,wro4j-wro4j,ro.isdc.wro.util.concurrent.TestTaskExecutor,shouldBeFasterWhenRunningMultipleSlowTasks,wro4j-core,wro4j-core/src/test/java/ro/isdc/wro/util/concurrent/TestTaskExecutor.java,"@Test
+  public void shouldBeFasterWhenRunningMultipleSlowTasks()
+      throws Exception {
+    final Collection<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+    final long delay = 100;
+    final int times = 10;
+    for (int i = 0; i < times; i++) {
+      callables.add(createSlowCallable(delay));
+    }
+
+    final long start = System.currentTimeMillis();
+    victim.submit(callables);
+    final long end = System.currentTimeMillis();
+
+    final long delta = end - start;
+    LOG.debug(""Execution took: {}"", delta);
+    assertTrue(delta < delay * times);
+  }",ok,
+https://github.com/wro4j/wro4j,7e3801e19fb43183c59607663ebd53c27a95cf77,ro.isdc.wro.util.concurrent.TestTaskExecutor#shouldHaveMinimalOverheadWhenRunningASingleTask,wro4j-wro4j,ro.isdc.wro.util.concurrent.TestTaskExecutor,shouldHaveMinimalOverheadWhenRunningASingleTask,wro4j-core,wro4j-core/src/test/java/ro/isdc/wro/util/concurrent/TestTaskExecutor.java,"@Test
+  public void shouldHaveMinimalOverheadWhenRunningASingleTask()
+      throws Exception {
+    final Collection<Callable<Void>> callables = new ArrayList<Callable<Void>>();
+    final long delay = 100;
+    callables.add(createSlowCallable(delay));
+
+    final long start = System.currentTimeMillis();
+    victim.submit(callables);
+    final long end = System.currentTimeMillis();
+
+    final long delta = end - start;
+    LOG.debug(""Execution took: {}"", delta);
+    //number of milliseconds added by overhead
+    final long overhead = 40;
+    assertTrue(delta < delay + overhead);
+  }",ok,
+https://github.com/zxing/zxing,59ea393a08e568d0c662707bccf56895acfb02cf,com.google.zxing.aztec.encoder.EncoderTest#testAztecWriter,zxing-zxing,com.google.zxing.aztec.encoder.EncoderTest,testAztecWriter,core,core/test/src/com/google/zxing/aztec/encoder/EncoderTest.java,"@Test
+  public void testAztecWriter() throws Exception {
+    testWriter(""\u20AC 1 sample data."", ""ISO-8859-1"", 25, true, 2);
+    testWriter(""\u20AC 1 sample data."", ""ISO-8859-15"", 25, true, 2);
+    testWriter(""\u20AC 1 sample data."", ""UTF-8"",  25, true, 2);
+    testWriter(""\u20AC 1 sample data."", ""UTF-8"", 100, true, 3);
+    testWriter(""\u20AC 1 sample data."", ""UTF-8"", 300, true, 4);
+    testWriter(""\u20AC 1 sample data."", ""UTF-8"", 500, false, 5);
+    // Test AztecWriter defaults
+    String data = ""In ut magna vel mauris malesuada"";
+    AztecWriter writer = new AztecWriter();
+    BitMatrix matrix = writer.encode(data, BarcodeFormat.AZTEC, 0, 0);
+    AztecCode aztec = Encoder.encode(data.getBytes(LATIN_1),
+        Encoder.DEFAULT_EC_PERCENT, Encoder.DEFAULT_AZTEC_LAYERS);
+    BitMatrix expectedMatrix = aztec.getMatrix();
+    assertEquals(matrix, expectedMatrix);
+  }",ok,
+https://github.com/zxing/zxing,59ea393a08e568d0c662707bccf56895acfb02cf,com.google.zxing.pdf417.decoder.ec.ErrorCorrectionTestCase#testTooManyErrors,zxing-zxing,com.google.zxing.pdf417.decoder.ec.ErrorCorrectionTestCase,testTooManyErrors,core,core/test/src/com/google/zxing/pdf417/decoder/ec/ErrorCorrectionTestCase.java,"@Test
+  public void testTooManyErrors() {
+    int[] received = PDF417_TEST_WITH_EC.clone();
+    Random random = getRandom();
+    corrupt(received, MAX_ERRORS + 3, random); // +3 since the algo can actually correct 2 more than it should here
+    try {
+      checkDecode(received);
+      fail(""Should not have decoded"");
+    } catch (ChecksumException ce) {
+      // good
+    }
+  }",ok,
