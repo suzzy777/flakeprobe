@@ -181,7 +181,6 @@ def clone_repository(
             "git",
             "clone",
             "--filter=blob:none",
-            "--no-checkout",
             project_url,
             str(destination),
         ],
@@ -243,12 +242,37 @@ def expected_source_file(
 ) -> Path:
     module_path = normalize_module(module)
     class_path = Path(*java_class.strip().split(".")).with_suffix(".java")
-    source_file = repository / module_path / "src" / "test" / "java" / class_path
-    if not source_file.is_file():
-        relative = source_file.relative_to(repository)
-        raise ExtractionError(f"Java test file not found: {relative}")
-    return source_file
 
+    # First try the standard Maven location.
+    expected = repository / module_path / "src" / "test" / "java" / class_path
+    if expected.is_file():
+        return expected
+
+    # Otherwise, search the entire repository by filename and package path.
+    matches = []
+    for candidate in repository.rglob(class_path.name):
+        if not candidate.is_file():
+            continue
+
+        candidate_parts = candidate.parts
+        package_parts = class_path.parts
+
+        if candidate_parts[-len(package_parts):] == package_parts:
+            matches.append(candidate)
+
+    if len(matches) == 1:
+        return matches[0]
+
+    if not matches:
+        raise ExtractionError(
+            f"Java test file not found anywhere in repository: {class_path}"
+        )
+
+    relative_matches = [str(path.relative_to(repository)) for path in matches]
+    raise ExtractionError(
+        f"Multiple matching Java files found for {java_class}: "
+        + "; ".join(relative_matches)
+    )
 
 def element_source(element: etree._Element) -> str:
     """Remove srcML tags while preserving their source-code text."""
