@@ -1,0 +1,203 @@
+id,project,test_name,fold1_pred,fold1_conf,fold2_pred,fold2_conf,fold3_pred,fold3_conf,fold4_pred,fold4_conf,n_folds_predicting_flaky,majority_category,avg_confidence
+8,activiti-activiti,testDelayedSuspendMultipleProcessDefinitionsByKey,Time,0.740991592,Time,0.932959437,Time,0.44937399,Time,0.851871431,4,Time,0.744
+9,activiti-activiti,testBasicJobExecutorOperation,Async Wait,0.912134767,Concurrency,0.462468654,Async Wait,0.409229696,Time,0.820439339,4,Async Wait,0.651
+11,activiti-activiti,testCycleDateStartTimerEvent,Async Wait,0.833056808,Time,0.930231392,Time,0.327134311,Time,0.862036824,4,Time,0.738
+13,activiti-activiti,testCycleDateStartTimerEvent,Async Wait,0.815559626,Time,0.930419385,Time,0.316905618,Time,0.861352623,4,Time,0.731
+32,activiti-activiti,testHistoricVariableQueryByTaskIds,Async Wait,0.622325897,Unordered Collections,0.942893565,Unordered Collections,0.5244084,Unordered Collections,0.94626832,4,Unordered Collections,0.759
+113,Alluxio-alluxio,rawtablePerfTest,Time,0.302580953,Not Flaky,0.940951705,Not Flaky,0.918323815,Not Flaky,0.878860295,1,Not Flaky,0.76
+199,apache-hbase,testDeleteTable,Async Wait,0.69535774,Order Dependent,0.939216852,Order Dependent,0.628562689,Order Dependent,0.950252533,4,Order Dependent,0.803
+200,apache-hbase,testCreateTable,Async Wait,0.726650357,Order Dependent,0.963802218,Order Dependent,0.746860147,Order Dependent,0.951037467,4,Order Dependent,0.847
+201,apache-hbase,testGetClusterStatusXML,Order Dependent,0.557851791,Order Dependent,0.759262741,Order Dependent,0.658792496,Order Dependent,0.942140937,4,Order Dependent,0.73
+202,apache-hbase,testGetClusterStatusPB,Order Dependent,0.780842006,Order Dependent,0.967035234,Order Dependent,0.891928971,Order Dependent,0.946576238,4,Order Dependent,0.897
+203,apache-hbase,testDFSMiniCluster,Order Dependent,0.90623343,Order Dependent,0.657053828,Order Dependent,0.805379868,Order Dependent,0.925083101,4,Order Dependent,0.823
+204,apache-hbase,testZooKeeperMiniCluster,Order Dependent,0.939230025,Not Flaky,0.92731905,Order Dependent,0.747329473,Order Dependent,0.925399363,3,Order Dependent,0.885
+205,apache-hbase,testHBaseMiniCluster,Order Dependent,0.938791096,Not Flaky,0.483025759,Order Dependent,0.649238586,Order Dependent,0.942550182,3,Order Dependent,0.753
+206,apache-hbase,testStargateServlet,Order Dependent,0.927479088,Order Dependent,0.663091898,Order Dependent,0.804909766,Order Dependent,0.9353953,4,Order Dependent,0.833
+207,apache-hbase,testGetTableDescriptor,Order Dependent,0.944525301,Order Dependent,0.518620551,Order Dependent,0.570425928,Order Dependent,0.945297837,4,Order Dependent,0.745
+208,apache-hbase,testGet,Unordered Collections,0.599092245,Order Dependent,0.833632767,Unordered Collections,0.763065994,Unordered Collections,0.94354111,4,Unordered Collections,0.785
+209,apache-hbase,testPut,Async Wait,0.436981142,Order Dependent,0.968196094,Unordered Collections,0.500576496,Unordered Collections,0.94340086,4,Unordered Collections,0.712
+210,apache-hbase,testDelete,Async Wait,0.513891995,Order Dependent,0.953281879,Unordered Collections,0.700105369,Unordered Collections,0.941255808,4,Unordered Collections,0.777
+211,apache-hbase,testScanner,Unordered Collections,0.643814862,Order Dependent,0.889680386,Order Dependent,0.405951589,Unordered Collections,0.938217044,4,Unordered Collections,0.719
+212,apache-hbase,testTableListText,Order Dependent,0.796290159,Order Dependent,0.948399842,Order Dependent,0.812340736,Order Dependent,0.948441744,4,Order Dependent,0.876
+213,apache-hbase,testTableListJSON,Order Dependent,0.846249819,Order Dependent,0.952108026,Order Dependent,0.836271882,Order Dependent,0.947746754,4,Order Dependent,0.896
+214,apache-hbase,testTableListXML,Order Dependent,0.604708791,Order Dependent,0.925966799,Order Dependent,0.80212301,Order Dependent,0.948573589,4,Order Dependent,0.82
+215,apache-hbase,testTableListPB,Order Dependent,0.904255986,Order Dependent,0.968459368,Order Dependent,0.884593487,Order Dependent,0.94703275,4,Order Dependent,0.926
+216,apache-hbase,testNoFilter,Unordered Collections,0.466429353,Order Dependent,0.874508679,Async Wait,0.4552055,Order Dependent,0.933257759,4,Order Dependent,0.682
+217,apache-hbase,testPrefixFilter,Unordered Collections,0.583380401,Order Dependent,0.918103635,Order Dependent,0.855715632,Order Dependent,0.917343259,4,Order Dependent,0.819
+218,apache-hbase,testPageFilter,Unordered Collections,0.801529646,Unordered Collections,0.93048811,Unordered Collections,0.784322321,Unordered Collections,0.936756253,4,Unordered Collections,0.863
+219,apache-hbase,testInclusiveStopFilter,Async Wait,0.646614254,Order Dependent,0.935940087,Async Wait,0.304035038,Unordered Collections,0.688531578,4,Async Wait,0.644
+220,apache-hbase,testQualifierFilter,Unordered Collections,0.464156359,Order Dependent,0.955379248,Async Wait,0.393578202,Unordered Collections,0.823879838,4,Unordered Collections,0.659
+221,apache-hbase,testRowFilter,Async Wait,0.596746981,Order Dependent,0.96226424,Async Wait,0.394024312,Unordered Collections,0.727303386,4,Async Wait,0.67
+222,apache-hbase,testValueFilter,Async Wait,0.713662088,Order Dependent,0.958259583,Async Wait,0.335917205,Unordered Collections,0.880605102,4,Async Wait,0.722
+223,apache-hbase,testSkipFilter,Unordered Collections,0.607963383,Order Dependent,0.530035079,Order Dependent,0.452094436,Unordered Collections,0.942149699,4,Unordered Collections,0.633
+224,apache-hbase,testFilterList,Unordered Collections,0.842961669,Order Dependent,0.681964278,Order Dependent,0.690634489,Unordered Collections,0.916218698,4,Unordered Collections,0.783
+225,apache-hbase,testFirstKeyOnlyFilter,Unordered Collections,0.687379181,Unordered Collections,0.839319468,Order Dependent,0.641017079,Unordered Collections,0.811383843,4,Unordered Collections,0.745
+226,apache-hbase,testTokenBucketConfig,Order Dependent,0.638835251,Unordered Collections,0.668818772,Not Flaky,0.498177767,Order Dependent,0.938674688,3,Order Dependent,0.686
+227,apache-hbase,testTokenBucket,Async Wait,0.909028411,Async Wait,0.965098023,Async Wait,0.749734581,Async Wait,0.933690727,4,Async Wait,0.889
+228,apache-hbase,testGetPlainUser,Unordered Collections,0.449257314,Order Dependent,0.955865324,Order Dependent,0.698331416,Order Dependent,0.947587252,4,Order Dependent,0.763
+229,apache-hbase,testGetAdminUser,Unordered Collections,0.305583537,Order Dependent,0.96209079,Order Dependent,0.699173927,Order Dependent,0.945831597,4,Order Dependent,0.728
+230,apache-hbase,testGetUserUnknown,Order Dependent,0.869890571,Order Dependent,0.945114553,Order Dependent,0.878784776,Order Dependent,0.94088006,4,Order Dependent,0.909
+231,apache-hbase,testGetDisabledUser,Unordered Collections,0.332421094,Order Dependent,0.962064266,Order Dependent,0.859462976,Order Dependent,0.947714984,4,Order Dependent,0.775
+232,apache-hbase,testGetStargateVersionText,Unordered Collections,0.69645685,Order Dependent,0.654746771,Unordered Collections,0.611937881,Unordered Collections,0.524698079,4,Unordered Collections,0.622
+233,apache-hbase,testGetStargateVersionXML,Async Wait,0.590175033,Order Dependent,0.815235615,Order Dependent,0.800953269,Order Dependent,0.947547555,4,Order Dependent,0.788
+234,apache-hbase,testGetStargateVersionJSON,Order Dependent,0.884043097,Order Dependent,0.942767322,Order Dependent,0.900544226,Order Dependent,0.946921408,4,Order Dependent,0.919
+235,apache-hbase,testGetStargateVersionPB,Order Dependent,0.461853892,Order Dependent,0.967472196,Order Dependent,0.908487856,Order Dependent,0.94812113,4,Order Dependent,0.821
+236,apache-hbase,testGetStorageClusterVersionText,Order Dependent,0.904491544,Order Dependent,0.961617947,Order Dependent,0.893071949,Order Dependent,0.949638724,4,Order Dependent,0.927
+237,apache-hbase,testGetStorageClusterVersionXML,Async Wait,0.579296947,Order Dependent,0.714535117,Order Dependent,0.816313267,Order Dependent,0.930708945,4,Order Dependent,0.76
+238,apache-hbase,testGetStorageClusterVersionJSON,Order Dependent,0.911719501,Order Dependent,0.957273304,Order Dependent,0.898629427,Order Dependent,0.948944747,4,Order Dependent,0.929
+239,apache-hbase,testDelete,Unordered Collections,0.729423523,Order Dependent,0.959528208,Unordered Collections,0.71202445,Order Dependent,0.914254606,4,Unordered Collections,0.829
+240,apache-hbase,testSingleCellGetPutXML,Unordered Collections,0.595367372,Order Dependent,0.961980581,Unordered Collections,0.537266195,Order Dependent,0.924737871,4,Unordered Collections,0.755
+241,apache-hbase,testSingleCellGetPutPB,Unordered Collections,0.37875104,Order Dependent,0.969052076,Order Dependent,0.808468997,Order Dependent,0.914563596,4,Order Dependent,0.768
+242,apache-hbase,testSingleCellGetPutBinary,Async Wait,0.747004688,Async Wait,0.943908811,Order Dependent,0.630368114,Order Dependent,0.501631975,4,Async Wait,0.706
+243,apache-hbase,testSingleCellGetJSON,Async Wait,0.596095204,Order Dependent,0.821235538,Order Dependent,0.80340445,Async Wait,0.776803792,4,Async Wait,0.749
+244,apache-hbase,testURLEncodedKey,Unordered Collections,0.580909491,Order Dependent,0.925180614,Order Dependent,0.483325452,Unordered Collections,0.813473821,4,Unordered Collections,0.701
+245,apache-hbase,testMultiCellGetPutXML,Async Wait,0.620909512,Order Dependent,0.89909929,Unordered Collections,0.463213265,Unordered Collections,0.938249171,4,Unordered Collections,0.73
+246,apache-hbase,testMultiCellGetPutPB,Async Wait,0.863206506,Async Wait,0.959041476,Order Dependent,0.755391359,Unordered Collections,0.755845368,4,Async Wait,0.833
+247,apache-hbase,testGetPlainUser,Unordered Collections,0.449257314,Order Dependent,0.955865324,Order Dependent,0.698331416,Order Dependent,0.947587252,4,Order Dependent,0.763
+248,apache-hbase,testGetAdminUser,Unordered Collections,0.305583537,Order Dependent,0.96209079,Order Dependent,0.699173927,Order Dependent,0.945831597,4,Order Dependent,0.728
+249,apache-hbase,testGetUserUnknown,Order Dependent,0.869890571,Order Dependent,0.945114553,Order Dependent,0.878784776,Order Dependent,0.94088006,4,Order Dependent,0.909
+250,apache-hbase,testGetDisabledUser,Unordered Collections,0.332421094,Order Dependent,0.962064266,Order Dependent,0.859462976,Order Dependent,0.947714984,4,Order Dependent,0.775
+251,apache-hbase,testTableCreateAndDeleteXML,Async Wait,0.901616871,Not Flaky,0.718829632,Not Flaky,0.866782367,Async Wait,0.903101385,2,Async Wait,0.848
+252,apache-hbase,testTableCreateAndDeletePB,Async Wait,0.901851058,Async Wait,0.962372124,Order Dependent,0.726505816,Async Wait,0.924034715,4,Async Wait,0.879
+253,apache-hbase,testSimpleScannerXML,Async Wait,0.708411038,Unordered Collections,0.769134343,Unordered Collections,0.532773793,Unordered Collections,0.571427584,4,Unordered Collections,0.645
+254,apache-hbase,testSimpleScannerPB,Async Wait,0.885360479,Order Dependent,0.896615267,Order Dependent,0.840374053,Order Dependent,0.782573879,4,Order Dependent,0.851
+255,apache-hbase,testSimpleScannerBinary,Async Wait,0.855803549,Unordered Collections,0.839764416,Async Wait,0.374598175,Unordered Collections,0.785585225,4,Async Wait,0.714
+256,apache-hbase,testFullTableScan,Order Dependent,0.91067785,Order Dependent,0.786722064,Unordered Collections,0.536806822,Order Dependent,0.877843916,4,Order Dependent,0.778
+257,apache-hbase,testMergeTable,Order Dependent,0.914667726,Order Dependent,0.712392688,Order Dependent,0.593148768,Order Dependent,0.948328733,4,Order Dependent,0.792
+258,apache-hbase,testMultiRegionTable,Order Dependent,0.95074451,Order Dependent,0.953751087,Order Dependent,0.708291054,Order Dependent,0.942277133,4,Order Dependent,0.889
+259,apache-hbase,testMultiRegionTable,Not Flaky,0.869268119,Not Flaky,0.961102486,Not Flaky,0.865780532,Order Dependent,0.929010093,1,Not Flaky,0.906
+260,apache-hbase,testUsingMetaAndBinary,Async Wait,0.911415279,Async Wait,0.877439618,Async Wait,0.461547643,Order Dependent,0.899677753,4,Async Wait,0.788
+261,apache-hbase,testGetClosestRowBefore3,Async Wait,0.844670534,Order Dependent,0.793937683,Async Wait,0.642584205,Unordered Collections,0.649234593,4,Async Wait,0.733
+262,apache-hbase,testGetClosestRowBefore2,Async Wait,0.871961296,Order Dependent,0.693666279,Async Wait,0.700238883,Unordered Collections,0.899792016,4,Async Wait,0.791
+265,apache-hbase,testWritesWhileGetting,Async Wait,0.876040101,Not Flaky,0.832265019,Async Wait,0.438343346,Async Wait,0.858035743,3,Async Wait,0.751
+268,apache-hbase,testSplit,Async Wait,0.887830138,Time,0.838923216,Concurrency,0.403854758,Unordered Collections,0.738763154,4,Async Wait,0.717
+269,apache-hbase,testFindMemstoresWithEditsOlderThan,Unordered Collections,0.763305426,Unordered Collections,0.948364556,Unordered Collections,0.705315173,Unordered Collections,0.943641007,4,Unordered Collections,0.84
+270,apache-hbase,testEditAdd,Async Wait,0.492747366,Time,0.927257478,Concurrency,0.472215772,Unordered Collections,0.489643633,4,Async Wait,0.595
+271,apache-hbase,testAppend,Async Wait,0.543081045,Time,0.924339771,Concurrency,0.476176322,Time,0.397413105,4,Time,0.585
+272,apache-hbase,testMergeMeta,Order Dependent,0.937696636,Order Dependent,0.819273353,Not Flaky,0.481756985,Order Dependent,0.945560277,3,Order Dependent,0.796
+273,apache-hbase,testFilters,Async Wait,0.779371023,Async Wait,0.951852322,Order Dependent,0.451880336,Async Wait,0.428265393,4,Async Wait,0.653
+274,apache-hbase,testStopRow,Async Wait,0.846499503,Order Dependent,0.942260087,Concurrency,0.470002681,Unordered Collections,0.443101913,4,Async Wait,0.675
+275,apache-hbase,testRaceBetweenClientAndTimeout,Async Wait,0.877507806,Async Wait,0.926845014,Async Wait,0.762696266,Concurrency,0.524939239,4,Async Wait,0.773
+276,apache-hbase,testScanner,Async Wait,0.916181266,Async Wait,0.640059352,Async Wait,0.735587001,Order Dependent,0.849780142,4,Async Wait,0.785
+277,apache-hbase,testScanAndSyncFlush,Async Wait,0.898061454,Order Dependent,0.905173957,Async Wait,0.649487138,Order Dependent,0.819514215,4,Async Wait,0.818
+278,apache-hbase,testScanAndRealConcurrentFlush,Async Wait,0.910472155,Async Wait,0.832293808,Async Wait,0.738929451,Concurrency,0.453233063,4,Async Wait,0.734
+279,apache-hbase,testLogRolling,Async Wait,0.917100966,Async Wait,0.940203369,Async Wait,0.734499633,Order Dependent,0.901696801,4,Async Wait,0.873
+280,apache-hbase,testLogRollOnDatanodeDeath,Async Wait,0.918709338,Concurrency,0.647251964,Concurrency,0.481151342,Async Wait,0.657330036,4,Async Wait,0.676
+281,apache-hbase,testMergeTool,Async Wait,0.86614722,Time,0.503604949,Concurrency,0.428106576,Unordered Collections,0.661521554,4,Async Wait,0.615
+282,apache-hbase,testRebalancing,Async Wait,0.919818044,Async Wait,0.964054585,Async Wait,0.786125064,Async Wait,0.933387697,4,Async Wait,0.901
+283,apache-hbase,testInfoServersAreUp,Async Wait,0.914697468,Async Wait,0.891655385,Order Dependent,0.787970006,Order Dependent,0.944105506,4,Async Wait,0.885
+305,apache-hbase,testScanMultipleVersions,Async Wait,0.821734071,Time,0.930993736,Concurrency,0.557632208,Time,0.775507867,4,Time,0.771
+306,apache-hbase,testIsDeleted_NotDeleted,Unordered Collections,0.808557987,Time,0.894166529,Unordered Collections,0.443389565,Unordered Collections,0.616597354,4,Unordered Collections,0.691
+307,apache-hbase,testBackgroundEvictionThread,Async Wait,0.844228983,Async Wait,0.965302825,Async Wait,0.779868066,Async Wait,0.932907283,4,Async Wait,0.881
+308,apache-hbase,testRegionCloseWhenNoMetaHBase2428,Not Flaky,0.667889953,Not Flaky,0.925997257,Not Flaky,0.884171307,Async Wait,0.498238117,1,Not Flaky,0.744
+309,apache-hbase,testAddingServerBeforeOldIsDead2413,Async Wait,0.585234463,Not Flaky,0.962482095,Not Flaky,0.905242682,Concurrency,0.911843896,2,Not Flaky,0.841
+310,apache-hbase,testKillRSWithOpeningRegion2482,Async Wait,0.7487216,Not Flaky,0.929038584,Not Flaky,0.835460305,Async Wait,0.915013552,2,Async Wait,0.857
+311,apache-hbase,testMinimumServerCount,Async Wait,0.925215304,Async Wait,0.965613067,Async Wait,0.77910167,Async Wait,0.93409276,4,Async Wait,0.901
+312,apache-hbase,testTimestamps,Async Wait,0.898439586,Order Dependent,0.524112344,Not Flaky,0.486174524,Order Dependent,0.730006695,3,Order Dependent,0.66
+313,apache-hbase,testTimeRangeMapRed,Not Flaky,0.665610611,Not Flaky,0.965599954,Not Flaky,0.883779049,Order Dependent,0.889411509,1,Not Flaky,0.851
+314,apache-hbase,testAll,Async Wait,0.42407915,Not Flaky,0.707475185,Order Dependent,0.580384791,Order Dependent,0.933643103,3,Order Dependent,0.661
+336,apache-hbase,testEmptyMetaInfo,Async Wait,0.819400668,Async Wait,0.963767946,Concurrency,0.476346672,Async Wait,0.93094337,4,Async Wait,0.798
+337,apache-hbase,testBasicHalfMapFile,Order Dependent,0.493769228,Order Dependent,0.965835214,Order Dependent,0.885270774,Order Dependent,0.951069832,4,Order Dependent,0.824
+338,apache-hbase,testReference,Async Wait,0.863571465,Not Flaky,0.960904837,Not Flaky,0.763844907,Unordered Collections,0.453705013,2,Not Flaky,0.761
+339,apache-hbase,testMultiPut,Async Wait,0.905504942,Async Wait,0.907237589,Concurrency,0.430743933,Unordered Collections,0.817306042,4,Async Wait,0.765
+340,apache-hbase,testWideScanBatching,Async Wait,0.824518621,Order Dependent,0.840270042,Concurrency,0.570516944,Concurrency,0.861741483,4,Concurrency,0.774
+341,apache-hbase,testCompaction,Async Wait,0.881761491,Order Dependent,0.834922791,Async Wait,0.587438047,Order Dependent,0.834076762,4,Async Wait,0.785
+342,apache-hbase,testMajorCompactingToNoOutput,Async Wait,0.907080233,Async Wait,0.814896584,Async Wait,0.664295673,Async Wait,0.785713434,4,Async Wait,0.793
+343,apache-hbase,testGetRowMultipleVersions,Async Wait,0.921254575,Async Wait,0.956173301,Async Wait,0.452280134,Unordered Collections,0.912677646,4,Async Wait,0.811
+636,square-okhttp,cacheCanUseCriteriaBesidesVariantObeyed,Async Wait,0.905547321,Not Flaky,0.931984901,Order Dependent,0.654093802,Async Wait,0.891079962,3,Async Wait,0.846
+637,square-okhttp,requestOnlyIfCachedWithNoResponseCached,Async Wait,0.90871793,Not Flaky,0.955633044,Not Flaky,0.4665007,Order Dependent,0.93189466,2,Not Flaky,0.816
+638,square-okhttp,maxAgePreferredWithMaxAgeAndExpires,Async Wait,0.585085154,Not Flaky,0.961788654,Not Flaky,0.736732423,Order Dependent,0.830196679,2,Not Flaky,0.778
+639,square-okhttp,contentLocationDoesNotPopulateCache,Async Wait,0.893769324,Not Flaky,0.905757308,Order Dependent,0.834729612,Order Dependent,0.458001852,3,Order Dependent,0.773
+640,square-okhttp,clientPrematureDisconnectWithNoLengthHeaders,Order Dependent,0.944592535,Not Flaky,0.960820079,Order Dependent,0.558075964,Order Dependent,0.942805052,3,Order Dependent,0.852
+641,square-okhttp,setIfModifiedSince,Async Wait,0.479272604,Time,0.76461786,Order Dependent,0.686526954,Time,0.510620058,4,Time,0.61
+642,square-okhttp,noDefaultExpirationForUrlsWithQueryString,Time,0.612835824,Not Flaky,0.948696434,Not Flaky,0.659818828,Order Dependent,0.792319536,2,Not Flaky,0.753
+643,square-okhttp,maxAgeInTheFutureWithDateHeader,Time,0.41364637,Not Flaky,0.961372852,Not Flaky,0.629016101,Order Dependent,0.927218616,2,Not Flaky,0.733
+644,square-okhttp,serverReturnsDocumentOlderThanCache,Time,0.703726053,Not Flaky,0.895949423,Order Dependent,0.363327593,Time,0.70256722,3,Time,0.666
+645,square-okhttp,responseCachingAndInputStreamSkipWithChunkedEncoding,Order Dependent,0.933050573,Not Flaky,0.964107513,Not Flaky,0.664758742,Order Dependent,0.939325929,2,Order Dependent,0.875
+646,square-okhttp,clientSuppliedConditionWithoutCachedResult,Async Wait,0.741311371,Not Flaky,0.786893427,Order Dependent,0.484298736,Time,0.666447937,3,Async Wait,0.67
+647,square-okhttp,requestPragmaNoCache,Time,0.423909992,Not Flaky,0.862379372,Order Dependent,0.49580875,Order Dependent,0.763176143,3,Order Dependent,0.636
+648,square-okhttp,cacheControlNoStoreAndExpirationDateInTheFuture,Async Wait,0.472605735,Not Flaky,0.962459683,Not Flaky,0.794884086,Order Dependent,0.635933518,2,Not Flaky,0.716
+649,square-okhttp,getHeadersDeletesCached100LevelWarnings,Async Wait,0.820974231,Not Flaky,0.927167892,Order Dependent,0.733214021,Time,0.531273246,3,Async Wait,0.753
+650,square-okhttp,clientPrematureDisconnectWithContentLengthHeader,Order Dependent,0.944438457,Not Flaky,0.958265483,Order Dependent,0.523591936,Order Dependent,0.943808198,3,Order Dependent,0.843
+651,square-okhttp,etag,Async Wait,0.501896679,Not Flaky,0.963010609,Not Flaky,0.784884751,Order Dependent,0.936843157,2,Not Flaky,0.797
+652,square-okhttp,authorizationResponseCachedWithMustRevalidate,Async Wait,0.539846241,Not Flaky,0.966515481,Not Flaky,0.72295928,Order Dependent,0.948956907,2,Not Flaky,0.795
+653,square-okhttp,maxAgePreferredOverLowerSharedMaxAge,Time,0.603697538,Not Flaky,0.962635159,Not Flaky,0.667707145,Order Dependent,0.930054307,2,Not Flaky,0.791
+654,square-okhttp,responseCachingAndRedirects,Async Wait,0.531506002,Order Dependent,0.542306602,Order Dependent,0.755937219,Order Dependent,0.523095429,4,Order Dependent,0.588
+655,square-okhttp,redirect,Async Wait,0.916825056,Not Flaky,0.462505996,Async Wait,0.589692473,Concurrency,0.48762235,3,Async Wait,0.614
+656,square-okhttp,receiveGoAwayHttp2,Order Dependent,0.851038218,Not Flaky,0.945796192,Order Dependent,0.757387519,Order Dependent,0.945909023,3,Order Dependent,0.875
+657,square-okhttp,pushPromiseStream,Async Wait,0.902910948,Async Wait,0.932371318,Async Wait,0.620490849,Async Wait,0.892968416,4,Async Wait,0.837
+658,square-okhttp,serverClosesClientInputStream,Async Wait,0.921535015,Not Flaky,0.858199298,Order Dependent,0.773488939,Async Wait,0.47087273,3,Async Wait,0.756
+659,square-okhttp,replyWithNoData,Async Wait,0.923846841,Not Flaky,0.698155522,Order Dependent,0.45990169,Async Wait,0.717419744,3,Async Wait,0.7
+660,square-okhttp,headersOnlyStreamIsClosedAfterReplyHeaders,Async Wait,0.921501994,Not Flaky,0.925057054,Order Dependent,0.694797873,Order Dependent,0.72822547,3,Order Dependent,0.817
+661,square-okhttp,readSendsWindowUpdateHttp2,Order Dependent,0.694872499,Not Flaky,0.945832908,Order Dependent,0.680329144,Order Dependent,0.945998728,3,Order Dependent,0.817
+662,square-okhttp,remoteSendsDataAfterInFinished,Async Wait,0.922088683,Not Flaky,0.805467427,Order Dependent,0.721630812,Async Wait,0.924619317,3,Async Wait,0.843
+663,square-okhttp,initialSettingsWithWindowSizeAdjustsConnection,Async Wait,0.922554493,Async Wait,0.957093418,Async Wait,0.759434938,Async Wait,0.61763972,4,Async Wait,0.814
+664,square-okhttp,maxFrameSizeHonored,Async Wait,0.922528625,Async Wait,0.907779515,Order Dependent,0.580042481,Async Wait,0.900449097,4,Async Wait,0.828
+665,square-okhttp,peerHttp2ServerZerosCompressionTable,Async Wait,0.883056641,Not Flaky,0.950820267,Order Dependent,0.772485614,Order Dependent,0.940994799,3,Order Dependent,0.887
+666,square-okhttp,responseSourceHeaderConditionalCacheNotFetched,Async Wait,0.815701723,Not Flaky,0.941829205,Order Dependent,0.633335292,Order Dependent,0.934348702,3,Order Dependent,0.831
+667,square-okhttp,responseCaching_410,Order Dependent,0.918012559,Not Flaky,0.966858685,Not Flaky,0.808321774,Order Dependent,0.945703864,2,Order Dependent,0.91
+668,square-okhttp,clientPrematureDisconnectWithChunkedEncoding,Order Dependent,0.931304932,Not Flaky,0.962157965,Not Flaky,0.561130643,Order Dependent,0.93962872,2,Order Dependent,0.849
+669,square-okhttp,statisticsConditionalCacheMiss,Async Wait,0.696389496,Time,0.632105708,Order Dependent,0.536998034,Time,0.551508188,4,Time,0.604
+670,square-okhttp,expirationDateInThePastWithLastModifiedHeader,Time,0.764998317,Not Flaky,0.882810533,Time,0.500542104,Time,0.615129411,3,Time,0.691
+671,square-okhttp,responseSourceHeaderFetched,Async Wait,0.913279653,Not Flaky,0.930239201,Order Dependent,0.910753667,Order Dependent,0.947116077,3,Order Dependent,0.925
+672,square-okhttp,responseCachingByResponseCode,Async Wait,0.455224663,Not Flaky,0.948035717,Async Wait,0.517442882,Async Wait,0.50110209,3,Async Wait,0.605
+673,square-okhttp,postFailsWithFixedLengthRequestForLargeRequest,Order Dependent,0.910414159,Not Flaky,0.95499897,Not Flaky,0.523872972,Order Dependent,0.942625701,2,Order Dependent,0.833
+674,square-okhttp,response300MultipleChoiceWithPost,Order Dependent,0.839660168,Not Flaky,0.965817392,Not Flaky,0.744965911,Order Dependent,0.946835995,2,Order Dependent,0.874
+675,square-okhttp,digestAuthentication,Async Wait,0.41458109,Not Flaky,0.939600408,Order Dependent,0.870579839,Order Dependent,0.903569102,3,Order Dependent,0.782
+676,square-okhttp,requestBodySurvivesRetriesWithFixedLength,Order Dependent,0.930331886,Not Flaky,0.957051277,Order Dependent,0.557775438,Order Dependent,0.942703962,3,Order Dependent,0.847
+677,square-okhttp,connectRetriesUntilConnectedOrFailed,Async Wait,0.912649512,Async Wait,0.456266731,Order Dependent,0.627827466,Order Dependent,0.429390103,4,Async Wait,0.607
+678,square-okhttp,connectViaHttpProxyToHttpsUsingBadProxyAndHttpResponseCache,Async Wait,0.918781161,Not Flaky,0.936835289,Async Wait,0.709355354,Concurrency,0.447450191,3,Async Wait,0.753
+679,square-okhttp,canSetNegativeChunkedStreamingMode,Async Wait,0.912314355,Not Flaky,0.954407275,Order Dependent,0.572595,Order Dependent,0.947761774,3,Order Dependent,0.847
+680,square-okhttp,requestBodySurvivesRetriesWithBufferedBody,Order Dependent,0.927713513,Not Flaky,0.959800124,Order Dependent,0.623115778,Order Dependent,0.946282506,3,Order Dependent,0.864
+681,square-okhttp,emptyResponseHeaderNameIsLenient,Async Wait,0.921683848,Not Flaky,0.717613757,Order Dependent,0.867935061,Order Dependent,0.939140141,3,Order Dependent,0.862
+682,square-okhttp,gzipWithRedirectAndConnectionReuse,Async Wait,0.917766631,Not Flaky,0.75607127,Order Dependent,0.83881408,Order Dependent,0.906440198,3,Order Dependent,0.855
+683,square-okhttp,redirectedWithNoLengthHeaders,Order Dependent,0.933254421,Not Flaky,0.949983716,Order Dependent,0.61003834,Order Dependent,0.941283047,3,Order Dependent,0.859
+684,square-okhttp,fullyBufferedPostIsTooShort,Async Wait,0.914411187,Not Flaky,0.757283032,Order Dependent,0.575694144,Order Dependent,0.882123947,3,Order Dependent,0.782
+685,square-okhttp,fixedLengthUpload_smallBuffers,Order Dependent,0.90426141,Not Flaky,0.922478318,Not Flaky,0.597577035,Order Dependent,0.938465714,2,Order Dependent,0.841
+686,square-okhttp,postFailsWithChunkedRequestForSmallRequest,Order Dependent,0.82527554,Not Flaky,0.956739008,Not Flaky,0.576163232,Order Dependent,0.942780554,2,Order Dependent,0.825
+687,square-okhttp,chunkedUpload_byteByByte,Order Dependent,0.775456369,Not Flaky,0.94936049,Not Flaky,0.629760444,Order Dependent,0.937864184,2,Order Dependent,0.823
+688,square-okhttp,redirectedWithChunkedEncoding,Order Dependent,0.926915944,Not Flaky,0.955591023,Not Flaky,0.513307154,Order Dependent,0.940658092,2,Order Dependent,0.834
+689,square-okhttp,setInvalidRequestMethodLowercase,Order Dependent,0.814283133,Not Flaky,0.909524262,Order Dependent,0.859780014,Order Dependent,0.949601769,3,Order Dependent,0.883
+690,square-okhttp,fullyBufferedPostIsTooLong,Async Wait,0.912774026,Not Flaky,0.776811719,Order Dependent,0.69555676,Order Dependent,0.878895164,3,Order Dependent,0.816
+691,square-okhttp,authenticateRealmUppercase,Async Wait,0.917926192,Not Flaky,0.910740614,Order Dependent,0.606420517,Order Dependent,0.943842173,3,Order Dependent,0.845
+692,square-okhttp,postFailsWithBufferedRequestForSmallRequest,Order Dependent,0.914516389,Not Flaky,0.95396173,Order Dependent,0.496111482,Order Dependent,0.942157447,3,Order Dependent,0.827
+693,square-okhttp,inputStreamAvailableWithContentLengthHeader,Order Dependent,0.931664586,Not Flaky,0.941188097,Order Dependent,0.576416969,Order Dependent,0.944962382,3,Order Dependent,0.849
+694,square-okhttp,setProtocols,Async Wait,0.914625764,Not Flaky,0.923424423,Not Flaky,0.531798184,Order Dependent,0.939252019,2,Not Flaky,0.827
+695,square-okhttp,connectionCloseInRequest,Async Wait,0.920022547,Async Wait,0.697035789,Order Dependent,0.499969959,Async Wait,0.928764224,4,Async Wait,0.761
+696,square-okhttp,response307WithOptions,Order Dependent,0.876629889,Not Flaky,0.941965282,Order Dependent,0.820644855,Order Dependent,0.943441153,3,Order Dependent,0.896
+697,square-okhttp,getOutputStreamOnGetFails,Async Wait,0.922413766,Not Flaky,0.878355742,Order Dependent,0.682522535,Order Dependent,0.907569706,3,Order Dependent,0.848
+698,square-okhttp,earlyDisconnectDoesntHarmPoolingWithFixedLengthEncoding,Order Dependent,0.919540942,Not Flaky,0.967118084,Not Flaky,0.731907547,Order Dependent,0.937667191,2,Order Dependent,0.889
+699,square-okhttp,unauthorizedResponseHandling,Async Wait,0.912862837,Order Dependent,0.679443598,Order Dependent,0.803741932,Order Dependent,0.940064788,4,Order Dependent,0.834
+700,square-okhttp,clientConfiguredCustomContentEncoding,Async Wait,0.914055407,Async Wait,0.719389141,Order Dependent,0.779004157,Order Dependent,0.897069991,4,Async Wait,0.827
+701,square-okhttp,cannotSetNegativeFixedLengthStreamingMode,Async Wait,0.915109336,Not Flaky,0.58298409,Order Dependent,0.829516768,Order Dependent,0.929853261,3,Order Dependent,0.814
+702,square-okhttp,response303SeeOtherWithPost,Order Dependent,0.851321876,Not Flaky,0.952454627,Order Dependent,0.73676759,Order Dependent,0.944542229,3,Order Dependent,0.871
+703,square-okhttp,chunkedUpload_smallBuffers,Order Dependent,0.928097486,Not Flaky,0.931224823,Not Flaky,0.585333765,Order Dependent,0.937328696,2,Order Dependent,0.845
+704,square-okhttp,setInvalidRequestMethodConnect,Order Dependent,0.825588465,Not Flaky,0.857359767,Order Dependent,0.866925538,Order Dependent,0.949604511,3,Order Dependent,0.875
+705,square-okhttp,serverShutdownOutput,Order Dependent,0.585952997,Not Flaky,0.956193686,Order Dependent,0.65656203,Order Dependent,0.938118637,3,Order Dependent,0.784
+706,square-okhttp,responseHeaders,Async Wait,0.903898478,Async Wait,0.953866243,Async Wait,0.776713371,Unordered Collections,0.7754004,4,Async Wait,0.852
+707,square-okhttp,fixedLengthUpload_largeBuffers,Order Dependent,0.72436583,Not Flaky,0.910359204,Not Flaky,0.585700274,Order Dependent,0.94051981,2,Order Dependent,0.79
+708,square-okhttp,singleByteReadIsSigned,Async Wait,0.920285463,Not Flaky,0.942304671,Order Dependent,0.833414078,Order Dependent,0.750181854,3,Order Dependent,0.862
+709,square-okhttp,postFailsWithFixedLengthRequestForSmallRequest,Order Dependent,0.918248534,Not Flaky,0.950665951,Order Dependent,0.490988195,Order Dependent,0.943697572,3,Order Dependent,0.826
+710,square-okhttp,serverSendsInvalidCodeTooLarge,Async Wait,0.921019316,Not Flaky,0.924809754,Order Dependent,0.674635828,Order Dependent,0.910294354,3,Order Dependent,0.858
+711,square-okhttp,response305UseProxy,Async Wait,0.917807877,Order Dependent,0.595730901,Order Dependent,0.773300409,Order Dependent,0.947004259,4,Order Dependent,0.808
+712,square-okhttp,readAfterLastByte,Async Wait,0.919715762,Not Flaky,0.943331003,Not Flaky,0.772318006,Order Dependent,0.931470871,2,Not Flaky,0.892
+713,square-okhttp,serverShutdownInput,Order Dependent,0.734385908,Not Flaky,0.953503668,Order Dependent,0.6697523,Order Dependent,0.942314804,3,Order Dependent,0.825
+714,square-okhttp,inputStreamAvailableWithNoLengthHeaders,Order Dependent,0.941093981,Not Flaky,0.937841952,Order Dependent,0.657733142,Order Dependent,0.943314075,3,Order Dependent,0.87
+715,square-okhttp,zeroLengthPut,Order Dependent,0.941008508,Not Flaky,0.957337201,Order Dependent,0.579666972,Order Dependent,0.932517648,3,Order Dependent,0.853
+716,square-okhttp,response307WithHead,Order Dependent,0.846825957,Not Flaky,0.936724663,Order Dependent,0.779834449,Order Dependent,0.944066882,3,Order Dependent,0.877
+717,square-okhttp,response307WithPost,Order Dependent,0.862186193,Not Flaky,0.942409754,Order Dependent,0.757158399,Order Dependent,0.945536613,3,Order Dependent,0.877
+718,square-okhttp,response302MovedTemporarilyWithPost,Order Dependent,0.706481159,Not Flaky,0.958347261,Order Dependent,0.518001914,Order Dependent,0.945509255,3,Order Dependent,0.782
+719,square-okhttp,authenticateWithChunkedStreaming,Order Dependent,0.910744369,Not Flaky,0.953277528,Order Dependent,0.516154349,Order Dependent,0.938256919,3,Order Dependent,0.83
+720,square-okhttp,nonHexChunkSize,Async Wait,0.914645016,Not Flaky,0.497745067,Order Dependent,0.67875874,Order Dependent,0.929176271,3,Order Dependent,0.755
+721,square-okhttp,requestBodySurvivesRetriesWithChunkedStreaming,Order Dependent,0.899286151,Not Flaky,0.964416325,Not Flaky,0.548732936,Order Dependent,0.941850364,2,Order Dependent,0.839
+722,square-okhttp,getContentLengthConnects,Async Wait,0.917741418,Not Flaky,0.934351325,Not Flaky,0.624115109,Order Dependent,0.940253794,2,Not Flaky,0.854
+723,square-okhttp,contentDisagreesWithChunkedHeader,Async Wait,0.916723669,Not Flaky,0.938578367,Order Dependent,0.863043785,Order Dependent,0.902865648,3,Order Dependent,0.905
+724,square-okhttp,connectViaProxyUsingProxySystemProperty,Order Dependent,0.923547506,Not Flaky,0.912381411,Order Dependent,0.723352313,Order Dependent,0.943716705,3,Order Dependent,0.876
+725,square-okhttp,postFailsWithChunkedRequestForLargeRequest,Order Dependent,0.848432899,Not Flaky,0.958031058,Not Flaky,0.569922447,Order Dependent,0.941643894,2,Order Dependent,0.83
+726,square-okhttp,veryLargeFixedLengthRequest,Async Wait,0.891750693,Async Wait,0.792667866,Async Wait,0.60325861,Order Dependent,0.567796409,4,Async Wait,0.714
+727,square-okhttp,zeroLengthPost,Order Dependent,0.933305621,Not Flaky,0.955814779,Order Dependent,0.669455409,Order Dependent,0.931276679,3,Order Dependent,0.872
+728,square-okhttp,getContent,Async Wait,0.914613485,Not Flaky,0.887376606,Order Dependent,0.836556494,Order Dependent,0.938928425,3,Order Dependent,0.894
+729,square-okhttp,setProtocolsWithoutHttp11,Order Dependent,0.463862747,Not Flaky,0.956633687,Not Flaky,0.607439101,Order Dependent,0.940816104,2,Order Dependent,0.742
+730,square-okhttp,disconnectedConnection,Async Wait,0.922653794,Async Wait,0.724202573,Async Wait,0.564991415,Order Dependent,0.849896133,4,Async Wait,0.765
+731,square-okhttp,getRequestPropertyReturnsLastValue,Async Wait,0.872352421,Not Flaky,0.808032274,Order Dependent,0.892763853,Order Dependent,0.901651323,3,Order Dependent,0.869
+732,square-okhttp,responseCacheReturnsNullOutputStream,Not Flaky,0.663471162,Not Flaky,0.952336371,Async Wait,0.657703698,Concurrency,0.558532119,2,Not Flaky,0.708
